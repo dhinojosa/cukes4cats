@@ -1,55 +1,71 @@
 package com.evolutionnext.parser
 
+import cats.parse.{Parser => P, Parser0 => P0}
 import com.evolutionnext.gherkin.{Feature, Scenario, Step, StepKeyword}
-import cats.parse.{Parser as P, Parser0 as P0}
-import cats.*
-import cats.implicits.*
 
-val newline: P[Unit] = P.char('\n').void
-val ws: P0[Unit] = P.charIn(" \t").rep0.void
-val textLine: P0[String] = P.charsWhile0(_ != '\n')
+object FeatureParser:
 
-val tag: P[String] =
-    (P.char('@') *> P.charsWhile(c => !c.isWhitespace)).string
+    private val newline: P[Unit] =
+        P.string("\r\n").void.orElse(P.char('\n').void)
 
-val featureHeader: P[String] =
-    P.string("Feature:") *> ws *> textLine
+    private val spaces0: P0[Unit] =
+        P.charIn(" \t").rep0.void
 
-val scenarioHeader: P[String] =
-    P.string("Scenario:") *> ws *> textLine
+    private val nonNewline: Char => Boolean =
+        ch => ch != '\n' && ch != '\r'
 
-val givenStep: P[Step] =
-    (P.string("Given") *> ws *> textLine).map(s => Step(StepKeyword.Given, s))
+    private val text: P[String] =
+        (P.charWhere(nonNewline) ~ P.charsWhile0(nonNewline)).map {
+            case (head, tail) => s"$head$tail"
+        }
 
-val whenStep: P[Step] =
-    (P.string("When") *> ws *> textLine).map(s => Step(StepKeyword.When, s))
+    private val featureHeader: P[String] =
+        (P.string("Feature:") *> spaces0 *> text <* newline.?).map(_.trim)
 
-val thenStep: P[Step] =
-    (P.string("Then") *> ws *> textLine).map(s => Step(StepKeyword.Then, s))
+    private val scenarioHeader: P[String] =
+        (P.string("Scenario:") *> spaces0 *> text <* newline.?).map(_.trim)
 
-val andStep: P[Step] =
-    (P.string("And") *> ws *> textLine).map(s => Step(StepKeyword.And, s))
+    private def stepLine(prefix: String, keyword: StepKeyword): P[Step] =
+        (P.string(prefix) *> P.char(' ') *> text <* newline.?).map { stepText =>
+            Step(keyword, stepText.trim)
+        }
 
-val butStep: P[Step] =
-    (P.string("But") *> ws *> textLine).map(s => Step(StepKeyword.But, s))
+    private val step: P[Step] =
+        stepLine("Given", StepKeyword.Given)
+            .backtrack
+            .orElse(stepLine("When", StepKeyword.When).backtrack)
+            .orElse(stepLine("Then", StepKeyword.Then).backtrack)
+            .orElse(stepLine("And", StepKeyword.And).backtrack)
+            .orElse(stepLine("But", StepKeyword.But))
 
-val step: P[Step] =
-    givenStep.orElse(whenStep).orElse(thenStep).orElse(andStep).orElse(butStep)
+    private val scenario: P[Scenario] =
+        (scenarioHeader ~ step.rep).map { case (name, steps) =>
+            Scenario(
+                tags = Nil,
+                name = name,
+                steps = steps.toList
+            )
+        }
 
-val scenario: P[Scenario] =
-    ((scenarioHeader <* newline), (step <* newline).rep).mapN { (name, steps) =>
-        //Scenario(name, steps.toList, Nil)
-        ???
-    }
+    private val feature: P[Feature] =
+        (featureHeader ~ scenario.rep).map { case (name, scenarios) =>
+            Feature(
+                tags = Nil,
+                name = name,
+                description = Nil,
+                scenarios = scenarios.toList
+            )
+        }
 
-val feature: P[Feature] =
-    ((featureHeader <* newline), scenario.rep).mapN { (name, scenarios) =>
-        //Feature(name, Nil, Nil, scenarios.toList)
-        ???    
-    }
+    def parse(content: String): Feature =
+        val normalized =
+            content
+                .linesIterator
+                .map(_.trim)
+                .filter(_.nonEmpty)
+                .mkString("\n")
 
-object FeatureParser {
-  def parse(content:String):Feature = {
-     ???
-  }
-}
+        feature.parseAll(normalized) match
+            case Right(value) => value
+            case Left(error) =>
+                throw new IllegalArgumentException(s"Could not parse feature: $error")
