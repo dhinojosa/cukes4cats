@@ -1,7 +1,7 @@
 package com.evolutionnext.parser
 
-import cats.parse.{Parser => P, Parser0 => P0}
-import com.evolutionnext.gherkin.{Feature, Scenario, Step, StepKeyword}
+import cats.parse.{Parser as P, Parser0 as P0}
+import com.evolutionnext.gherkin.*
 
 object FeatureParser:
 
@@ -38,7 +38,32 @@ object FeatureParser:
             .orElse(stepLine("And", StepKeyword.And).backtrack)
             .orElse(stepLine("But", StepKeyword.But))
 
-    private val scenario: P[Scenario] =
+    private val tagName: P[String] =
+        (P.charWhere(ch => !ch.isWhitespace && ch != '@') ~
+            P.charsWhile0(ch => !ch.isWhitespace && ch != '@')).map {
+            case (head, tail) => s"$head$tail"
+        }
+
+    private val tag: P[Tag] =
+        (P.char('@') *> tagName).map(Tag.apply)
+
+    private val tagLine: P[List[Tag]] =
+        (tag.repSep(P.char(' ')) <* newline.?).map(_.toList)
+
+    private val tags: P0[List[Tag]] =
+        tagLine.rep0.map(_.flatten)
+
+    private val taggedScenario: P[Scenario] =
+        (tagLine.rep ~ scenarioHeader ~ step.rep).map {
+            case ((tagLines, name), steps) =>
+                Scenario(
+                    tags = tagLines.toList.flatten,
+                    name = name,
+                    steps = steps.toList
+                )
+        }
+
+    private val untaggedScenario: P[Scenario] =
         (scenarioHeader ~ step.rep).map { case (name, steps) =>
             Scenario(
                 tags = Nil,
@@ -47,15 +72,35 @@ object FeatureParser:
             )
         }
 
-    private val feature: P[Feature] =
-        (featureHeader ~ scenario.rep).map { case (name, scenarios) =>
-            Feature(
-                tags = Nil,
-                name = name,
-                description = Nil,
-                scenarios = scenarios.toList
-            )
+    private val scenario: P[Scenario] =
+        taggedScenario.backtrack.orElse(untaggedScenario)
+
+
+
+    private val featureWithTags: P[Feature] =
+        (tagLine.rep ~ featureHeader ~ scenario.rep).map {
+            case ((tagLines, name), scenarios) =>
+                Feature(
+                    tags = tagLines.toList.flatten,
+                    name = name,
+                    description = Nil,
+                    scenarios = scenarios.toList
+                )
         }
+
+    private val featureWithoutTags: P[Feature] =
+        (featureHeader ~ scenario.rep).map {
+            case (name, scenarios) =>
+                Feature(
+                    tags = Nil,
+                    name = name,
+                    description = Nil,
+                    scenarios = scenarios.toList
+                )
+        }
+
+    private val feature: P[Feature] =
+            featureWithTags.backtrack.orElse(featureWithoutTags)
 
     def parse(content: String): Feature =
         val normalized =
