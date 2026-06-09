@@ -1,9 +1,16 @@
 package com.evolutionnext.gherkin
 
+
+case class Background(
+                         name: Option[String],
+                         steps: List[Step]
+                     )
+
 final case class Feature(
                           tags: List[Tag],
                           name: String,
                           description: List[String],
+                          background: Option[Background],
                           scenarios: List[Scenario]
                         )
 

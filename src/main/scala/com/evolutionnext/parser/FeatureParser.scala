@@ -83,6 +83,7 @@ object FeatureParser:
                 Feature(
                     tags = tagLines.toList.flatten,
                     name = name,
+                    background = None,
                     description = Nil,
                     scenarios = scenarios.toList
                 )
@@ -94,6 +95,7 @@ object FeatureParser:
                 Feature(
                     tags = Nil,
                     name = name,
+                    background = None,
                     description = Nil,
                     scenarios = scenarios.toList
                 )
