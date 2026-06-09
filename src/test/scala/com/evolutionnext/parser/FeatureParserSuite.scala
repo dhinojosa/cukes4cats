@@ -105,7 +105,7 @@ class FeatureParserSuite extends munit.FunSuite {
     assertEquals(feature.scenarios.head.steps.size, 4)
   }
 
-  test("basic parse with two annoations and two scenarios") {
+  test("basic parse with two annotations and two scenarios") {
     val string =
       """@Foo @Bar
         |Feature: Basic arithmetic
