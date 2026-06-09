@@ -69,6 +69,24 @@ Then[Int]("the result is {int}") { expected =>
 }
 ```
 
+or perhaps better
+
+```scala 3
+val glue =
+  Glue[IO]
+    .given[Int]("I have number {int}") { n =>
+      StepF.modify(_.copy(left = Some(n)))
+    }
+    .when[Int]("I add number {int}") { n =>
+      StepF.modify(ctx => ctx.copy(result = ctx.left.map(_ + n)))
+    }
+    .then[Int]("the result is {int}") { expected =>
+      StepF.inspectF(ctx => IO(assertEquals(ctx.result, Some(expected))))
+    }
+```
+
+
+
 The framework is responsible for:
 
 - Matching step expressions
@@ -188,3 +206,31 @@ Interpreter
 > The scenario is not a collection of methods.
 >
 > The scenario is a program.
+
+### Possible Runner for MUnit
+
+```scala 3
+class ArithmeticFeatureSuite extends CatsEffectSuite {
+  test("basic arithmetic") {
+    CukeRunner.runFeature[IO](
+      featurePath = "features/arithmetic.feature",
+      glue = ArithmeticGlue,
+      initial = ScenarioContext.empty
+    ).void
+  }
+}
+```
+
+### Possible Runner for Weaver
+
+```scala 3
+object ArithmeticFeatureSuite extends SimpleIOSuite {
+  pureTest("basic arithmetic") {
+    CukeRunner.runFeature[IO](
+      featurePath = "features/arithmetic.feature",
+      glue = ArithmeticGlue,
+      initial = ScenarioContext.empty
+    ).as(success)
+  }
+}
+```
