@@ -8,6 +8,22 @@ object FeatureParser:
   private val newline: P[Unit] =
     P.string("\r\n").void.orElse(P.char('\n').void)
 
+  private val pipe: P[Unit] = P.char('|').void
+
+  private val cellText: P[String] =
+    P.charsWhile(ch => ch != '|' && ch != '\n' && ch != '\r').map(_.trim)
+
+  private val cell: P[Cell] = (cellText <* pipe).map(Cell.apply)
+
+  private val row: P[Row] =
+    (pipe *> cell.rep).map(cells => Row(cells.toList *))
+
+  private val endOfLine: P[Unit] =
+    P.string("\r\n").void.orElse(P.char('\n').void).orElse(P.char('\r').void)
+
+  private val table: P[Table] =
+    (row <* newline).rep.map { rows => Table(rows.toList *) }
+
   private val spaces0: P0[Unit] =
     P.charIn(" \t").rep0.void
 
@@ -25,10 +41,20 @@ object FeatureParser:
   private val scenarioHeader: P[String] =
     (P.string("Scenario:") *> spaces0 *> text <* newline.?).map(_.trim)
 
-  private def stepLine(prefix: String, keyword: StepKeyword): P[Step] =
-    (P.string(prefix) *> P.char(' ') *> text <* newline.?).map { stepText =>
-      Step(keyword, stepText.trim)
-    }
+  private def stepLine(prefix: String, keyword: StepKeyword): P[Step] = {
+    val stepPrefix = P.string(prefix) *> P.char(' ') *> text
+
+    val stepWithTable: P[Step] =
+      ((stepPrefix <* newline) ~ table).map {
+        case (stepText, parsedTable) =>
+          Step(keyword, stepText.trim, Some(parsedTable))
+      }
+
+    val stepWithoutTable: P[Step] =
+      (stepPrefix <* newline.?).map { stepText => Step(keyword, stepText.trim, None) }
+
+    stepWithTable.backtrack.orElse(stepWithoutTable)
+  }
 
   private val step: P[Step] =
     stepLine("Given", StepKeyword.Given)
@@ -105,5 +131,5 @@ object FeatureParser:
 
   def parse(content: String): Either[P.Error, Feature] =
     val normalized =
-      content.linesIterator.map(_.trim).filter(_.nonEmpty).mkString("\n")
+      content.linesIterator.map(_.trim).filter(_.nonEmpty).mkString("\n") + "\n"
     feature.parseAll(normalized)

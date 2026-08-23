@@ -23,7 +23,8 @@ final case class Tag(value: String)
 
 final case class Step(
     keyword: StepKeyword,
-    text: String
+    text: String,
+    table: Option[Table] = Option.empty[Table]
 )
 final case class Cell(
     string: String
