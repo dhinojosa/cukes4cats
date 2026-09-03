@@ -1,6 +1,7 @@
 package com.evolutionnext.parser
 
 import cats.parse.{Parser as P, Parser0 as P0}
+import cats.parse.Rfc5234.*
 import com.evolutionnext.gherkin.*
 
 object FeatureParser:
@@ -24,11 +25,12 @@ object FeatureParser:
   private val table: P[Table] =
     (row <* newline).rep.map { rows => Table(rows.toList *) }
 
-  private val spaces0: P0[Unit] =
-    P.charIn(" \t").rep0.void
+  private val spaces0: P0[Unit] = wsp.rep0.void
 
   private val nonNewline: Char => Boolean =
     ch => ch != '\n' && ch != '\r'
+
+  private val nonNewLineP: P0[Unit] = P.not(crlf)
 
   private val text: P[String] =
     (P.charWhere(nonNewline) ~ P.charsWhile0(nonNewline)).map {
