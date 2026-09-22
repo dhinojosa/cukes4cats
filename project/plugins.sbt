@@ -1,1 +1,2 @@
-addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.2")
+addSbtPlugin("org.scalameta" %% "sbt-scalafmt" % "2.6.2")
+addSbtPlugin("org.typelevel" %% "sbt-typelevel" % "0.8.6")
