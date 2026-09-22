@@ -10,13 +10,7 @@ final case class Feature(
     name: String,
     description: List[String],
     background: Option[Background],
-    scenarios: List[Scenario]
-)
-
-final case class Scenario(
-    tags: List[Tag],
-    name: String,
-    steps: List[Step]
+    featureElements: List[FeatureElement]
 )
 
 final case class Tag(value: String)
@@ -40,7 +34,22 @@ final case class Header(
 final case class Table(
     row: Row*
 )
+case class Example(table:Table)
+enum FeatureElement:
+  case ScenarioOutline(
+      tags: List[Tag],
+      name: String,
+      steps: List[Step],
+      examples: List[Example]
+  )
+
+  case Scenario(
+      tags: List[Tag],
+      name: String,
+      steps: List[Step]
+  )
 
 enum StepKeyword {
   case Given, When, Then, And, But
 }
+
