@@ -11,6 +11,17 @@ ThisBuild / developers ++= List(
 val Scala3 = "3.3.0"
 ThisBuild / crossScalaVersions := Seq("2.13.18", Scala3)
 ThisBuild / scalaVersion := Scala3 // the default Scala
+ThisBuild / githubWorkflowGeneratedCI ~= (_.map {
+    case job if job.id == "dependency-submission" =>
+        job.withPermissions(
+            Some(
+                org.typelevel.sbt.gha.Permissions.Specify.defaultRestrictive
+                    .withContents(org.typelevel.sbt.gha.PermissionValue.Write)
+            )
+        )
+    case job => job
+})
+
 
 lazy val root = tlCrossRootProject.aggregate(core)
 

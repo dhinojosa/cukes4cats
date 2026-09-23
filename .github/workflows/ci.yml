@@ -196,7 +196,18 @@ jobs:
         java: [temurin@8]
     runs-on: ${{ matrix.os }}
     permissions:
-        contents: write
+      actions: none
+      checks: none
+      contents: write
+      deployments: none
+      id-token: none
+      issues: none
+      packages: read
+      pages: none
+      pull-requests: none
+      repository-projects: none
+      security-events: none
+      statuses: none
     steps:
       - name: Checkout current branch (full)
         uses: actions/checkout@v6
