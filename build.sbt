@@ -5,7 +5,7 @@ ThisBuild / organizationName := "Evolutionnext"
 ThisBuild / startYear := Some(2026)
 ThisBuild / licenses := Seq(License.MIT)
 ThisBuild / developers ++= List(
-    tlGitHubDev("dhinojosa", "Daniel Hinojosa")
+  tlGitHubDev("dhinojosa", "Daniel Hinojosa")
 )
 
 val Scala3 = "3.3.0"
@@ -15,17 +15,15 @@ ThisBuild / scalaVersion := Scala3 // the default Scala
 lazy val root = tlCrossRootProject.aggregate(core)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
-    .in(file("core"))
-    .settings(
-        name := "cukes4cats-core",
-        description := "Core Cucumber for Typelevel Cats",
-        libraryDependencies ++= Seq(
-            "org.typelevel" %% "cats-core" % "2.13.0",
-            "org.typelevel" %% "cats-effect" % "3.7.0",
-            "org.typelevel" %% "cats-parse" % "1.1.0",
-            "org.scalameta" %% "munit" % "1.3.4" % Test,
-            "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test
-        )
+  .in(file("core"))
+  .settings(
+    name := "cukes4cats-core",
+    description := "Core Cucumber for Typelevel Cats",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-core" % "2.13.0",
+      "org.typelevel" %% "cats-effect" % "3.7.0",
+      "org.typelevel" %% "cats-parse" % "1.1.0",
+      "org.scalameta" %% "munit" % "1.3.4" % Test,
+      "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test
     )
-
-
+  )
