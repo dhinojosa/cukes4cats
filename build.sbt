@@ -5,7 +5,6 @@ ThisBuild / organizationName := "Evolutionnext"
 ThisBuild / startYear := Some(2026)
 ThisBuild / licenses := Seq(License.MIT)
 ThisBuild / developers ++= List(
-    // your GitHub handle and name
     tlGitHubDev("dhinojosa", "Daniel Hinojosa")
 )
 
