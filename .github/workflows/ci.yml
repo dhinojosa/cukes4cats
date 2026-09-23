@@ -195,6 +195,8 @@ jobs:
         os: [ubuntu-22.04]
         java: [temurin@8]
     runs-on: ${{ matrix.os }}
+    permissions:
+        contents: write
     steps:
       - name: Checkout current branch (full)
         uses: actions/checkout@v6
