@@ -301,12 +301,6 @@ class FeatureParserSuite extends CatsEffectSuite {
   }
 
   test("parse 003-scenario-outline.feature") {
-    def findFirstScenarioOutline(f: Feature): EitherT[IO, CukeError, ScenarioOutline] = {
-      val opt: Option[ScenarioOutline] =
-        f.featureElements.collectFirst { case so: ScenarioOutline => so }
-      EitherT.fromOption[IO](opt, RunnerError("Cannot find Scenario Outline"))
-    }
-
     def assertExpectedScenarioOutline(featureElement: FeatureElement): Unit = {
       featureElement match {
         case so: ScenarioOutline => {
