@@ -1,13 +1,13 @@
 package com.evolutionnext.parser
 
-import cats.data.EitherT
+import cats.data.{EitherT, NonEmptyList}
 import cats.effect.*
 import cats.parse.Parser
 import cats.syntax.all.*
 import com.evolutionnext.gherkin.*
 import com.evolutionnext.gherkin.CukeError.{ParserError, RunnerError}
 import com.evolutionnext.gherkin.FeatureElement.{Scenario, ScenarioOutline}
-import com.evolutionnext.gherkin.StepKeyword.Given
+import com.evolutionnext.gherkin.StepKeyword.{And, Given}
 import munit.CatsEffectSuite
 
 import scala.io.Source
@@ -15,12 +15,6 @@ import scala.io.Source
 class FeatureParserSuite extends CatsEffectSuite {
   test("canary test") {
     assert(true)
-  }
-
-  test("feature header") {
-    val text = "Feature: How soon is now\n"
-    val result: Either[Parser.Error, Feature] = FeatureParser.featureHeader.parseAll(text)
-    result.fold(pe => fail(pe.toString), feature => println(feature))
   }
 
   test("read in 000-basic-scenario.feature content") {
@@ -53,7 +47,6 @@ class FeatureParserSuite extends CatsEffectSuite {
 
     assertEquals(feature.name, "Basic arithmetic")
     assertEquals(feature.tags, Nil)
-    assertEquals(feature.description, Nil)
     assertEquals(feature.featureElements.length, 1)
 
     val featureElement = feature.featureElements.head
@@ -69,10 +62,7 @@ class FeatureParserSuite extends CatsEffectSuite {
     assertEquals(
       scenario.steps,
       List(
-        com
-          .evolutionnext
-          .gherkin
-          .Step(com.evolutionnext.gherkin.StepKeyword.Given, "the number 2"),
+        com.evolutionnext.gherkin.Step(Given, "the number 2"),
         com
           .evolutionnext
           .gherkin
@@ -289,17 +279,6 @@ class FeatureParserSuite extends CatsEffectSuite {
     )
   }
 
-  test("Scenario Outline Header parses") {
-    val result = FeatureParser
-      .scenarioOutlineHeader
-      .parseAll("   Scenario Outline: Apply discount to total\n")
-    result match {
-      case Right(ScenarioOutline(_, name, _, _)) =>
-        assertEquals(name, "Apply discount to total")
-      case Left(e) => fail(e.toString)
-    }
-  }
-
   test("parse 003-scenario-outline.feature") {
     def assertExpectedScenarioOutline(featureElement: FeatureElement): Unit = {
       featureElement match {
@@ -324,6 +303,173 @@ class FeatureParserSuite extends CatsEffectSuite {
 
     featureResult.value.map {
       case Right(feature) => assertExpectedFeature(feature)
+      case Left(cukeError) => fail(cukeError.toString)
+    }
+  }
+
+  test("parse 004-multiple-example-blocks.feature") {
+
+    def assertExpectedFeature(feature: Feature): Unit = {
+      assert(feature.name == "Shipping cost")
+      assertFeatureElements(feature.featureElements)
+    }
+
+    def assertFeatureElements(featureElements: List[FeatureElement]): Unit = {
+      assert(featureElements.length == 1)
+      featureElements.headOption match {
+        case Some(fe) => assertScenarioOutline(fe)
+        case None => fail("No feature element found")
+      }
+    }
+
+    def assertSteps(steps: NonEmptyList[Step]): Unit = {
+      val expected: NonEmptyList[Step] = NonEmptyList(
+        Step(Given, "a package weight of <weight>"),
+        List(
+          Step(StepKeyword.And, "a destination region of \"<region>\""),
+          Step(StepKeyword.When, "I calculate shipping"),
+          Step(StepKeyword.Then, "the shipping cost should be <cost>")
+        )
+      )
+      assertEquals(steps, expected)
+    }
+
+    def assertExamples(examples: NonEmptyList[Example]): Unit = {
+      def row(values: String*): Row = Row(values.map(Cell.apply) *)
+
+      val expected: NonEmptyList[Example] = NonEmptyList.of(
+        Example(
+          Some("Domestic"),
+          NonEmptyList.one(
+            Table(
+              row("weight", "region", "cost"),
+              row("1", "US", "5.00"),
+              row("5", "US", "8.50")
+            )
+          )
+        ),
+        Example(
+          Some("International"),
+          NonEmptyList.one(
+            Table(
+              row("weight", "region", "cost"),
+              row("1", "EU", "12.00"),
+              row("5", "APAC", "20.00")
+            )
+          )
+        )
+      )
+
+      assertEquals(examples, expected)
+    }
+
+    def assertScenarioOutline(featureElement: FeatureElement): Unit = {
+      featureElement match {
+        case ScenarioOutline(tags, name, steps, examples) => {
+          assert(tags.isEmpty)
+          assert(name == "Shipping rates vary by region")
+          assertSteps(steps)
+          assertExamples(examples)
+        }
+        case _ => fail("Not a scenario outline")
+      }
+    }
+
+    val featureResult: EitherT[IO, CukeError, Feature] = for {
+      content <- readFromFile("004-multiple-example-blocks.feature")
+      feature <- parseFeature(content)
+    } yield feature
+
+    featureResult.value.map {
+      case Right(feature) => assertExpectedFeature(feature)
+      case Left(cukeError) => fail(cukeError.toString)
+    }
+  }
+
+  test("parse 005-background-scenario.feature") {
+
+    def assertBackground(background: Background): Unit = {
+      def row(values: String*): Row = Row(values.map(Cell.apply) *)
+
+      val expectedTable = Table(
+        row("sku", "name", "price"),
+        row("A100", "Notebook", "10.00"),
+        row("B200", "Pencil", "2.50")
+      )
+
+      val expectedSteps = NonEmptyList(
+        Step(Given, "an empty shopping cart"),
+        List(Step(And, "a catalog with the following items:", Some(expectedTable)))
+      )
+
+      assertEquals(background.steps, expectedSteps)
+    }
+
+    def assertExpectedBackground(feature: Feature): Unit = {
+      feature.background match {
+        case Some(background) => assertBackground(background)
+        case None => fail("Expected a Background")
+      }
+    }
+
+    val featureResult: EitherT[IO, CukeError, Feature] = for {
+      content <- readFromFile("005-background-scenario.feature")
+      feature <- parseFeature(content)
+    } yield feature
+
+    featureResult.value.map {
+      case Right(feature) => assertExpectedBackground(feature)
+      case Left(cukeError) => fail(cukeError.toString)
+    }
+  }
+
+  test("parse 007-rule-blocks.feature") {
+
+    def assertFeatureHasRules(feature: Feature): Unit = {
+      val expectedRules = List(
+        Rule(
+          "Password must be at least 8 characters",
+          NonEmptyList.one(
+            Scenario(
+              tags = Nil,
+              name = "Reject short password",
+              steps = List(
+                Step(Given, "a password of \"short\""),
+                Step(StepKeyword.When, "I validate the password"),
+                Step(StepKeyword.Then, "the password should be rejected")
+              )
+            )
+          )
+        ),
+        Rule(
+          "Password must contain a number",
+          NonEmptyList.one(
+            Scenario(
+              tags = Nil,
+              name = "Reject password without number",
+              steps = List(
+                Step(Given, "a password of \"longpassword\""),
+                Step(StepKeyword.When, "I validate the password"),
+                Step(StepKeyword.Then, "the password should be rejected")
+              )
+            )
+          )
+        )
+      )
+
+      assertEquals(feature.name, "Password policy")
+      assertEquals(feature.background, None)
+      assertEquals(feature.featureElements, Nil)
+      assertEquals(feature.rules, expectedRules)
+    }
+
+    val featureResult: EitherT[IO, CukeError, Feature] = for {
+      content <- readFromFile("007-rule-blocks.feature")
+      feature <- parseFeature(content)
+    } yield feature
+
+    featureResult.value.map {
+      case Right(feature) => assertFeatureHasRules(feature)
       case Left(cukeError) => fail(cukeError.toString)
     }
   }

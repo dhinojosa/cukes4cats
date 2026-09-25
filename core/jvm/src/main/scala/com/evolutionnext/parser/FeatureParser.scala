@@ -44,12 +44,14 @@ object FeatureParser:
   private val ignorable: P0[Unit] =
     (crlf | cr | lf | wsp).rep0.void
 
-  private[parser] val featureHeader: P[Feature] =
-    (P.string("Feature:") *> spaces0 *> text <* newline.?).map(s =>
-      Feature(Nil, s, Nil, None, Nil)).withContext("featureHeader")
+  private[parser] val featureHeader: P[String] =
+    (P.string("Feature:") *> spaces0 *> text <* newline.?)
+      .withContext("featureHeader")
 
   private val scenarioHeader: P[String] =
-    (P.string("Scenario:") *> spaces0 *> text <* newline.?).map(_.trim).withContext("scenarioHeader")
+    (P.string("Scenario:") *> spaces0 *> text <* newline.?)
+      .map(_.trim)
+      .withContext("scenarioHeader")
 
   private def stepLine(prefix: String, keyword: StepKeyword): P[Step] = {
     val stepPrefix = ignorable.with1 *> P.string(prefix) *> P.char(' ') *> text
@@ -109,39 +111,67 @@ object FeatureParser:
         )
     }
 
+  private val backgroundHeader: P[Unit] =
+    wsp.rep0.void.with1 *> P.string("Background:").void *> wsp.rep0.void *> (cr | lf).void
+
+  private val background: P[Background] =
+    (backgroundHeader.void *> step.rep).map(steps => Background(steps))
+
   private val scenario: P[Scenario] =
     taggedScenario.backtrack.orElse(untaggedScenario).withContext("scenario")
 
-  val scenarioOutlineHeader: P[ScenarioOutline] =
-    wsp.rep0.void.with1 *> (P.string("Scenario Outline:") *> restOfLine)
-      .map(_.trim)
-      .map(s => ScenarioOutline(Nil, s, Nil, Nil))
+  private val scenarioOutlineHeader: P[String] =
+    wsp.rep0.void.with1 *> (P.string("Scenario Outline:") *> restOfLine).map(_.trim)
 
-  val examples: P[Example] =
-    (
-      wsp.rep0.void.with1 *> P.string("Examples:").void *> wsp
-        .rep0.void *> endOfLine *> table <* (cr | lf).rep0.void
-    ).map(Example.apply).withContext("examples")
+  private val exampleLine: P[Option[String]] =
+    (wsp.rep0.void.with1 *> P.string("Examples:").void *>
+      wsp.rep0.void *> endOfLine)
+      .map(u => Option.empty[String])
+      .withContext("Example Line Without Label")
 
-  val scenarioOutline: P[FeatureElement.ScenarioOutline] =
-    (scenarioOutlineHeader ~ step.rep ~ examples.rep)
-      .map {
-        case ((scenarioOutline, steps), examples) =>
-          scenarioOutline.copy(steps = steps.toList, examples = examples.toList)
-      }
-      .withContext("ScenarioOutlineWithSteps")
+  private val exampleLineWithLabel: P[Option[String]] =
+    (wsp.rep0.void.with1 *> P.string("Examples:").void *>
+      wsp.rep0.void *> text <* wsp.rep0.void <* endOfLine)
+      .map(s => Option(s))
+      .withContext("Example Line With Label")
+
+  private val examplesChoice: P[Option[String]] = exampleLine.backtrack | exampleLineWithLabel
+
+  private val examplesChoiceWithTable: P[Example] =
+    (examplesChoice ~ table.rep).map(Example.apply)
+
+  private val scenarioOutline: P[FeatureElement.ScenarioOutline] =
+    (scenarioOutlineHeader ~ step.rep ~ examplesChoiceWithTable.rep).map {
+      case ((scenarioOutlineHeader, steps), examples) =>
+        ScenarioOutline(
+          name = scenarioOutlineHeader,
+          steps = steps,
+          examples = examples,
+          tags = Nil)
+    }
+
+  val ruleString:P[String] = (ignorable.with1 *> P.string("Rule:").void *> wsp.rep0 *> text <* wsp.rep0.void *> (cr | lf).void.rep)
+
+  /*
+   * There is an ordering restriction: all feature-level scenarios must appear before the first Rule.
+   * Once a Rule begins, you cannot return to feature-level scenarios.
+   */
+
+  val rule: P[Rule] = (ruleString ~ (scenario.backtrack | scenarioOutline).rep).map { (title, featureElements) =>
+        Rule(title, featureElements)
+  }
 
   private val featureElement: P[FeatureElement] =
     ignorable.with1 *> scenarioOutline.orElse(scenario)
 
   val feature: P[Feature] =
-    (tagLine.rep.?.with1 ~ featureHeader ~ featureElement.rep <* (cr | lf).rep.? <* P.end).map {
-      case ((maybeTagLines, feature), featureElements) =>
+    (tagLine.rep.?.with1 ~ featureHeader ~ background.? ~ featureElement.rep0 ~ rule.rep0 <* (cr | lf).rep.? <* P.end).map {
+      case ((((maybeTagLines, featureHeader), maybeBackground), featureElements), rules) =>
         val listTags: List[Tag] = maybeTagLines match {
           case Some(tags) => tags.toList.flatten
           case None => Nil
         }
-        feature.copy(tags = listTags, featureElements = featureElements.toList)
+        Feature(listTags, featureHeader, maybeBackground, featureElements, rules)
     }
 
   def parse(content: String): Either[P.Error, Feature] =

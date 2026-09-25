@@ -1,16 +1,17 @@
 package com.evolutionnext.gherkin
 
+import cats.data.NonEmptyList
+
 case class Background(
-    name: Option[String],
-    steps: List[Step]
+    steps: NonEmptyList[Step]
 )
 
 final case class Feature(
     tags: List[Tag],
     name: String,
-    description: List[String],
     background: Option[Background],
-    featureElements: List[FeatureElement]
+    featureElements: List[FeatureElement],
+    rules: List[Rule]
 )
 
 final case class Tag(value: String)
@@ -34,13 +35,20 @@ final case class Header(
 final case class Table(
     row: Row*
 )
-case class Example(table:Table)
+
+final case class Rule(
+    text: String,
+    featureElements: NonEmptyList[FeatureElement]
+)
+
+case class Example(label: Option[String], table: NonEmptyList[Table])
+
 enum FeatureElement:
   case ScenarioOutline(
       tags: List[Tag],
       name: String,
-      steps: List[Step],
-      examples: List[Example]
+      steps: NonEmptyList[Step],
+      examples: NonEmptyList[Example]
   )
 
   case Scenario(
@@ -52,4 +60,3 @@ enum FeatureElement:
 enum StepKeyword {
   case Given, When, Then, And, But
 }
-
