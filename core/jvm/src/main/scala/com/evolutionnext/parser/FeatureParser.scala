@@ -26,7 +26,7 @@ import cats.parse.{Parser as P, Parser0 as P0}
 import com.evolutionnext.gherkin.*
 import com.evolutionnext.gherkin.FeatureElement.{Scenario, ScenarioOutline}
 
-object FeatureParser:
+object FeatureParser {
 
   private val newline: P[Unit] =
     P.string("\r\n").void.orElse(P.char('\n').void)
@@ -201,3 +201,4 @@ object FeatureParser:
     val normalized =
       content.linesIterator.map(_.trim).filter(_.nonEmpty).mkString("\n") + "\n"
     feature.parseAll(normalized)
+}
