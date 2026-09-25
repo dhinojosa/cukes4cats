@@ -52,8 +52,6 @@ object FeatureParser:
   private val nonNewline: Char => Boolean =
     ch => ch != '\n' && ch != '\r'
 
-  private val nonNewLineP: P0[Unit] = P.not(crlf)
-
   val restOfLine: P[String] =
     ((alpha | wsp).rep.string <* (crlf | cr | lf)).withContext("restOfLine")
 
@@ -107,9 +105,6 @@ object FeatureParser:
 
   private val tagLine: P[List[Tag]] =
     (tag.repSep(P.char(' ')) <* newline.?).map(_.toList)
-
-  private val tags: P0[List[Tag]] =
-    tagLine.rep0.map(_.flatten)
 
   private val taggedScenario: P[Scenario] =
     (tagLine.rep ~ scenarioHeader ~ step.rep).map {
@@ -170,7 +165,7 @@ object FeatureParser:
           tags = Nil)
     }
 
-  val ruleString: P[String] =
+  private val ruleString: P[String] =
     ignorable.with1 *> P.string("Rule:").void *> wsp.rep0 *> text <* wsp.rep0.void *> (cr | lf)
       .void
       .rep
