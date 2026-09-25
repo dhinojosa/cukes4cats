@@ -66,8 +66,7 @@ object FeatureParser:
     (crlf | cr | lf | wsp).rep0.void
 
   private[parser] val featureHeader: P[String] =
-    (P.string("Feature:") *> spaces0 *> text <* newline.?)
-      .withContext("featureHeader")
+    (P.string("Feature:") *> spaces0 *> text <* newline.?).withContext("featureHeader")
 
   private val scenarioHeader: P[String] =
     (P.string("Scenario:") *> spaces0 *> text <* newline.?)
@@ -171,22 +170,30 @@ object FeatureParser:
           tags = Nil)
     }
 
-  val ruleString:P[String] = (ignorable.with1 *> P.string("Rule:").void *> wsp.rep0 *> text <* wsp.rep0.void *> (cr | lf).void.rep)
+  val ruleString: P[String] =
+    ignorable.with1 *> P.string("Rule:").void *> wsp.rep0 *> text <* wsp.rep0.void *> (cr | lf)
+      .void
+      .rep
 
   /*
    * There is an ordering restriction: all feature-level scenarios must appear before the first Rule.
    * Once a Rule begins, you cannot return to feature-level scenarios.
    */
 
-  val rule: P[Rule] = (ruleString ~ (scenario.backtrack | scenarioOutline).rep).map { (title, featureElements) =>
-        Rule(title, featureElements)
+  val rule: P[Rule] = (ruleString ~ (scenario.backtrack | scenarioOutline).rep).map {
+    (title, featureElements) => Rule(title, featureElements)
   }
 
   private val featureElement: P[FeatureElement] =
     ignorable.with1 *> scenarioOutline.orElse(scenario)
 
   val feature: P[Feature] =
-    (tagLine.rep.?.with1 ~ featureHeader ~ background.? ~ featureElement.rep0 ~ rule.rep0 <* (cr | lf).rep.? <* P.end).map {
+    (tagLine
+      .rep
+      .?
+      .with1 ~ featureHeader ~ background.? ~ featureElement.rep0 ~ rule.rep0 <* (cr | lf)
+      .rep
+      .? <* P.end).map {
       case ((((maybeTagLines, featureHeader), maybeBackground), featureElements), rules) =>
         val listTags: List[Tag] = maybeTagLines match {
           case Some(tags) => tags.toList.flatten
