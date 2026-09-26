@@ -36,7 +36,7 @@ object ParserDiagnose {
         val start = math.max(0, offset - 10)
         val end = math.min(visible.length, offset + 11)
 
-        if offset < visible.length then {
+        if (offset < visible.length) {
           val before = visible.slice(start, offset)
           val char = visible(offset)
           val after = visible.slice(offset + 1, end)

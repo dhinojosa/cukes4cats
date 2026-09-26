@@ -24,8 +24,11 @@ package com.evolutionnext.gherkin
 import cats.data.NonEmptyList
 import cats.parse.Parser.Expectation
 
-enum CukeError {
-  case IOError(message: String)
-  case ParserError(message: String, expectation: NonEmptyList[Expectation])
-  case RunnerError(message: String)
+sealed trait CukeError extends Product with Serializable
+
+object CukeError {
+  final case class IOError(message: String) extends CukeError
+  final case class ParserError(message: String, expectation: NonEmptyList[Expectation])
+      extends CukeError
+  final case class RunnerError(message: String) extends CukeError
 }

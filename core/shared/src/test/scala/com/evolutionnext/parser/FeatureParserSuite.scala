@@ -22,10 +22,10 @@
 package com.evolutionnext.parser
 
 import cats.data.{EitherT, NonEmptyList}
-import cats.effect.*
+import cats.effect._
 import cats.parse.Parser
-import cats.syntax.all.*
-import com.evolutionnext.gherkin.*
+import cats.syntax.all._
+import com.evolutionnext.gherkin._
 import com.evolutionnext.gherkin.CukeError.{ParserError, RunnerError}
 import com.evolutionnext.gherkin.FeatureElement.{Scenario, ScenarioOutline}
 import com.evolutionnext.gherkin.StepKeyword.{And, Given}
@@ -356,7 +356,7 @@ class FeatureParserSuite extends CatsEffectSuite {
     }
 
     def assertExamples(examples: NonEmptyList[Example]): Unit = {
-      def row(values: String*): Row = Row(values.map(Cell.apply) *)
+      def row(values: String*): Row = Row(values.map(Cell.apply): _*)
 
       val expected: NonEmptyList[Example] = NonEmptyList.of(
         Example(
@@ -410,7 +410,7 @@ class FeatureParserSuite extends CatsEffectSuite {
   test("parse 005-background-scenario.feature") {
 
     def assertBackground(background: Background): Unit = {
-      def row(values: String*): Row = Row(values.map(Cell.apply) *)
+      def row(values: String*): Row = Row(values.map(Cell.apply): _*)
 
       val expectedTable = Table(
         row("sku", "name", "price"),

@@ -21,9 +21,9 @@
 
 package com.evolutionnext.parser
 
-import cats.parse.Rfc5234.*
-import cats.parse.{Parser as P, Parser0 as P0}
-import com.evolutionnext.gherkin.*
+import cats.parse.Rfc5234._
+import cats.parse.{Parser => P, Parser0 => P0}
+import com.evolutionnext.gherkin._
 import com.evolutionnext.gherkin.FeatureElement.{Scenario, ScenarioOutline}
 
 object FeatureParser {
@@ -39,13 +39,13 @@ object FeatureParser {
   private val cell: P[Cell] = (cellText <* pipe).map(Cell.apply)
 
   private val row: P[Row] =
-    (pipe *> cell.rep).map(cells => Row(cells.toList *)).withContext("row")
+    (pipe *> cell.rep).map(cells => Row(cells.toList: _*)).withContext("row")
 
   private val endOfLine: P[Unit] =
     P.string("\r\n").void.orElse(P.char('\n').void).orElse(P.char('\r').void)
 
   private val table: P[Table] =
-    (row <* newline).rep.map { rows => Table(rows.toList *) }.withContext("table")
+    (row <* newline).rep.map { rows => Table(rows.toList: _*) }.withContext("table")
 
   private val spaces0: P0[Unit] = wsp.rep0.void
 
@@ -153,7 +153,7 @@ object FeatureParser {
   private val examplesChoice: P[Option[String]] = exampleLine.backtrack | exampleLineWithLabel
 
   private val examplesChoiceWithTable: P[Example] =
-    (examplesChoice ~ table.rep).map(Example.apply)
+    (examplesChoice ~ table.rep).map { case (label, tables) => Example(label, tables) }
 
   private val scenarioOutline: P[FeatureElement.ScenarioOutline] =
     (scenarioOutlineHeader ~ step.rep ~ examplesChoiceWithTable.rep).map {
@@ -176,7 +176,7 @@ object FeatureParser {
    */
 
   val rule: P[Rule] = (ruleString ~ (scenario.backtrack | scenarioOutline).rep).map {
-    (title, featureElements) => Rule(title, featureElements)
+    case (title, featureElements) => Rule(title, featureElements)
   }
 
   private val featureElement: P[FeatureElement] =
@@ -197,8 +197,9 @@ object FeatureParser {
         Feature(listTags, featureHeader, maybeBackground, featureElements, rules)
     }
 
-  def parse(content: String): Either[P.Error, Feature] =
+  def parse(content: String): Either[P.Error, Feature] = {
     val normalized =
       content.linesIterator.map(_.trim).filter(_.nonEmpty).mkString("\n") + "\n"
     feature.parseAll(normalized)
+  }
 }

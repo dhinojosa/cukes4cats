@@ -64,20 +64,29 @@ final case class Rule(
 
 case class Example(label: Option[String], table: NonEmptyList[Table])
 
-enum FeatureElement:
-  case ScenarioOutline(
+sealed trait FeatureElement extends Product with Serializable
+
+object FeatureElement {
+  final case class ScenarioOutline(
       tags: List[Tag],
       name: String,
       steps: NonEmptyList[Step],
       examples: NonEmptyList[Example]
-  )
+  ) extends FeatureElement
 
-  case Scenario(
+  final case class Scenario(
       tags: List[Tag],
       name: String,
       steps: List[Step]
-  )
+  ) extends FeatureElement
+}
 
-enum StepKeyword {
-  case Given, When, Then, And, But
+sealed trait StepKeyword extends Product with Serializable
+
+object StepKeyword {
+  case object Given extends StepKeyword
+  case object When extends StepKeyword
+  case object Then extends StepKeyword
+  case object And extends StepKeyword
+  case object But extends StepKeyword
 }

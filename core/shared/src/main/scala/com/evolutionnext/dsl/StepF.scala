@@ -24,9 +24,8 @@ package com.evolutionnext.dsl
 import cats.Applicative
 import cats.data.StateT
 
-type StepF[F[_], Context] = StateT[F, Context, Unit]
-
 object StepF {
+  type StepF[F[_], Context] = StateT[F, Context, Unit]
 
   def modify[F[_]: Applicative, C](f: C => C): StepF[F, C] =
     StateT.modify(f)
