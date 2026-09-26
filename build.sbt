@@ -28,6 +28,8 @@ ThisBuild / githubWorkflowGeneratedCI ~= (_.map {
   case job => job
 })
 
+ThisBuild / publish / skip := true
+
 lazy val root = tlCrossRootProject.aggregate(core)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
