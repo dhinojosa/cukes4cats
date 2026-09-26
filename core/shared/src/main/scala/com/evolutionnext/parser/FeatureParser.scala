@@ -52,9 +52,6 @@ object FeatureParser {
   private val nonNewline: Char => Boolean =
     ch => ch != '\n' && ch != '\r'
 
-  val restOfLine: P[String] =
-    ((alpha | wsp).rep.string <* (crlf | cr | lf)).withContext("restOfLine")
-
   private val text: P[String] =
     (P.charWhere(nonNewline) ~ P.charsWhile0(nonNewline)).map {
       case (head, tail) => s"$head$tail"
@@ -136,7 +133,8 @@ object FeatureParser {
     taggedScenario.backtrack.orElse(untaggedScenario).withContext("scenario")
 
   private val scenarioOutlineHeader: P[String] =
-    wsp.rep0.void.with1 *> (P.string("Scenario Outline:") *> restOfLine).map(_.trim)
+    (wsp.rep0.void.with1 *> (P
+      .string("Scenario Outline:") *> text <* wsp.rep0.void *> (cr | lf).void)).map(_.trim)
 
   private val exampleLine: P[Option[String]] =
     (wsp.rep0.void.with1 *> P.string("Examples:").void *>

@@ -26,7 +26,7 @@ import cats.effect._
 import cats.parse.Parser
 import cats.syntax.all._
 import com.evolutionnext.gherkin._
-import com.evolutionnext.gherkin.CukeError.{ParserError, RunnerError}
+import com.evolutionnext.gherkin.CukeError
 import com.evolutionnext.gherkin.FeatureElement.{Scenario, ScenarioOutline}
 import com.evolutionnext.gherkin.StepKeyword.{And, Given}
 import munit.CatsEffectSuite
@@ -291,13 +291,6 @@ class FeatureParserSuite extends CatsEffectSuite {
       case Right(table) =>
         assertEquals(table.row.size, 4)
     }
-  }
-
-  test("restOfLine parses scenario outline name") {
-    assertEquals(
-      FeatureParser.restOfLine.parseAll("Apply discount to total\n"),
-      Right("Apply discount to total")
-    )
   }
 
   test("parse 003-scenario-outline.feature") {
