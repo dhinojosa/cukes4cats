@@ -22,7 +22,7 @@
 package com.evolutionnext.parser
 
 import cats.parse.Rfc5234._
-import cats.parse.{Parser => P, Parser0 => P0}
+import cats.parse.{Parser as P, Parser0 as P0}
 import com.evolutionnext.gherkin._
 import com.evolutionnext.gherkin.FeatureElement.{Scenario, ScenarioOutline}
 
