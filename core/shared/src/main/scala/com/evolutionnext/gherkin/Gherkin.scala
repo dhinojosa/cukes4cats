@@ -40,8 +40,9 @@ final case class Tag(value: String)
 final case class Step(
     keyword: StepKeyword,
     text: String,
-    table: Option[Table] = Option.empty[Table]
+    stepArgument: Option[StepArgument]
 )
+
 final case class Cell(
     string: String
 )
@@ -62,7 +63,7 @@ final case class Rule(
     featureElements: NonEmptyList[FeatureElement]
 )
 
-case class Example(label: Option[String], table: NonEmptyList[Table])
+case class Example(label: Option[String], table: Table)
 
 sealed trait FeatureElement extends Product with Serializable
 
@@ -89,4 +90,11 @@ object StepKeyword {
   case object Then extends StepKeyword
   case object And extends StepKeyword
   case object But extends StepKeyword
+}
+
+sealed trait StepArgument
+
+object StepArgument {
+  final case class DocString(content: String, mediaType: Option[String]) extends StepArgument
+  final case class DataTable(table: Table) extends StepArgument
 }
