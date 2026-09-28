@@ -21,7 +21,6 @@
 
 package com.evolutionnext.parser
 
-import com.evolutionnext.gherkin.FeatureElement.ScenarioOutline
 import munit.FunSuite
 
 class ScenarioOutlineParserSuite extends FunSuite {
