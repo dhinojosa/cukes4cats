@@ -13,8 +13,10 @@ object TableParser {
   private val cell: P[Cell] = (cellText <* pipe).map(Cell.apply)
 
   private val row: P[Row] =
-    (wsp.rep0.void.with1 *> pipe *> cell.rep <* endOfLineOrInput).map(cells => Row(cells.toList: _*)).withContext("row")
+    (wsp.rep0.void.with1 *> pipe *> cell.rep <* endOfLineOrInput)
+      .map(cells => Row(cells.toList: _*))
+      .withContext("row")
 
   private[parser] val table: P[Table] =
-      row.backtrack.rep.map(rows => Table(rows.toList: _*)).withContext("table")
+    row.backtrack.rep.map(rows => Table(rows.toList: _*)).withContext("table")
 }

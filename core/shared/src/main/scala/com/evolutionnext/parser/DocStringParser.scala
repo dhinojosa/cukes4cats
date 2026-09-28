@@ -35,8 +35,8 @@ object DocStringParser {
         DocString(prepareString(spaceCount, content), maybeMediaType)
     }
 
-  private def prepareString(count:Int, content: String): String = {
-      val lineSeparator = System.lineSeparator()
-      content.split("[\n\r]").map(_.substring(count)).mkString(lineSeparator)
+  private def prepareString(count: Int, content: String): String = {
+    val lineSeparator = System.lineSeparator()
+    content.split("[\n\r]").map(_.substring(count)).mkString(lineSeparator)
   }
 }

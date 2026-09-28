@@ -15,15 +15,17 @@ object ScenarioOutlineParser {
 
   private val stepRepWithLineFeed: P[NonEmptyList[Step]] = (cr | lf).rep0.void.with1 *> step.rep
 
-  private val examplesChoiceWithTableRepWithLineFeed: P[Example] = (endOfLine.rep0.void.with1 *> examplesChoiceWithTable).backtrack
+  private val examplesChoiceWithTableRepWithLineFeed: P[Example] =
+    (endOfLine.rep0.void.with1 *> examplesChoiceWithTable).backtrack
 
   private[parser] val scenarioOutline: P[FeatureElement.ScenarioOutline] =
-    (scenarioOutlineHeader ~ stepRepWithLineFeed ~ examplesChoiceWithTableRepWithLineFeed.rep).map {
-      case ((scenarioOutlineHeader, steps), examples) =>
-        ScenarioOutline(
-          name = scenarioOutlineHeader,
-          steps = steps,
-          examples = examples,
-          tags = Nil)
-    }
+    (scenarioOutlineHeader ~ stepRepWithLineFeed ~ examplesChoiceWithTableRepWithLineFeed.rep)
+      .map {
+        case ((scenarioOutlineHeader, steps), examples) =>
+          ScenarioOutline(
+            name = scenarioOutlineHeader,
+            steps = steps,
+            examples = examples,
+            tags = Nil)
+      }
 }

@@ -19,7 +19,7 @@ object RuleParser {
     scenarioOutline.backtrack.orElse(scenario)
 
   private[parser] val rule: P[Rule] =
-    ((ruleString <* (cr|lf).rep.void) ~ ruleElement.rep).map {
+    ((ruleString <* (cr | lf).rep.void) ~ ruleElement.rep).map {
       case (title, featureElements) =>
         Rule(title, featureElements)
     }

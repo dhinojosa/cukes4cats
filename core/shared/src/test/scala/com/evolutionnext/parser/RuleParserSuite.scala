@@ -52,7 +52,10 @@ class RuleParserSuite extends FunSuite {
     result match {
       case Right((remainder, Rule(text, featureElements))) => {
         assertEquals(text, "Make tortillas")
-        assertEquals(remainder, "\n") // The remainder should be untouched, parse is good for that
+        assertEquals(
+          remainder,
+          "\n"
+        ) // The remainder should be untouched, parse is good for that
       }
       case Left(error) => fail(ParserDiagnose.betterMessage(error))
     }

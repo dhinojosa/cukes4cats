@@ -19,7 +19,8 @@ class ScenarioOutlineParserSuite extends FunSuite {
 
     val parseResult = ScenarioOutlineParser.scenarioOutline.parseAll(text)
     parseResult match {
-      case Right(scenarioOutline) => assertEquals(scenarioOutline.name, "Apply discount to total")
+      case Right(scenarioOutline) =>
+        assertEquals(scenarioOutline.name, "Apply discount to total")
       case Left(parseError) => fail(ParserDiagnose.betterMessage(parseError))
     }
   }
