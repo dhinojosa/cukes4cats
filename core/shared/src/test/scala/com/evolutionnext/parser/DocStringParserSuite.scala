@@ -21,8 +21,6 @@
 
 package com.evolutionnext.parser
 
-import cats.parse.Parser as P
-import com.evolutionnext.gherkin.StepArgument.DocString
 import munit.FunSuite
 
 class DocStringParserSuite extends FunSuite {
