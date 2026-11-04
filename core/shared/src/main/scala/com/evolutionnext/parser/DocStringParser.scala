@@ -46,7 +46,7 @@ object DocStringParser {
 
   private[parser] val docString: P[DocString] =
     (
-      wsp.rep0.collect { case xs => xs.length }.with1 ~ docStringMediaTypeStartAnchor
+      wsp.rep0.map(_.length).with1 ~ docStringMediaTypeStartAnchor
         .backtrack
         .orElse(docStringNoMediaTypeStartAnchor) ~
         P.until0(docStringEndAnchor) <*

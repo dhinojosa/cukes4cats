@@ -24,8 +24,10 @@ package com.evolutionnext.parser
 import munit.FunSuite
 
 class DocStringParserSuite extends FunSuite {
+
+  val delimiter = "\"\"\""
+
   test("the doc string only 3 quotation marks - no media type with a new line") {
-    val delimiter = "\"\"\""
     val input =
       s"""$delimiter
          |Hello
@@ -41,7 +43,6 @@ class DocStringParserSuite extends FunSuite {
   }
 
   test("the doc string only 3 quotation marks - no media type without a new line") {
-    val delimiter = "\"\"\""
     val input =
       s"""$delimiter
          |Hello$delimiter
@@ -57,7 +58,6 @@ class DocStringParserSuite extends FunSuite {
 
   test(
     "the doc string only 3 quotation marks - no media type without a new line after the closing delimiter") {
-    val delimiter = "\"\"\""
     val input =
       s"""$delimiter
          |Hello
@@ -74,7 +74,6 @@ class DocStringParserSuite extends FunSuite {
   test(
     """Each line of the Doc String will be dedented according to the opening triple quote.
       |  Indentation beyond the column of the opening triple quote will therefore be preserved.""".stripMargin) {
-    val delimiter = "\"\"\""
     val input: String =
       s"""    $delimiter
          |    first
@@ -91,6 +90,50 @@ class DocStringParserSuite extends FunSuite {
       case Left(parserError) =>
         fail(ParserDiagnose.betterMessage(parserError))
     }
+  }
+
+  test("the closing delimiter does not determine the Doc String margin") {
+    val input =
+      s"""    $delimiter
+         |    first
+         |      second
+         |$delimiter""".stripMargin
+    val expected =
+      """first
+        |  second""".stripMargin
+    val parser = DocStringParser.docString
+    parser.parseAll(input) match {
+      case Right(docString) => assertEquals(docString.content, expected)
+      case Left(parserError) =>
+        fail(ParserDiagnose.betterMessage(parserError))
+    }
+  }
+
+  test("mixed spaces and tabs are dedented only when they match the opening indentation") {
+    val openingIndentation = " \t"
+    val input =
+      s"""$openingIndentation$delimiter
+         |${openingIndentation}first
+         |  second
+         |$openingIndentation$delimiter""".stripMargin
+    val expected =
+      """first
+        |second""".stripMargin
+
+    DocStringParser.docString.parseAll(input) match {
+      case Right(docString) => assertEquals(docString.content, expected)
+      case Left(parserError) =>
+        fail(ParserDiagnose.betterMessage(parserError))
+    }
+  }
+
+  test("the opening delimiter must be preceded only by leading whitespace") {
+    val input =
+      s"""text before $delimiter
+         |content
+         |$delimiter""".stripMargin
+
+    assert(DocStringParser.docString.parseAll(input).isLeft)
   }
 
   /*
