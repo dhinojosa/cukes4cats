@@ -33,7 +33,9 @@ object DocStringParser {
     (P.string("\"\"\"").void *> text <* wsp.rep0.void *> (cr | lf).rep.void).map(s => Some(s))
 
   private val docStringEndAnchor: P[Unit] =
-    (wsp.rep0.void.with1 *> P.string("\"\"\"").withContext("end delimiter") <* wsp.rep0.void) <* endOfLineOrInput
+    (wsp.rep0.void.with1 *> P.string("\"\"\"").withContext("end delimiter") <* wsp
+      .rep0
+      .void) <* endOfLineOrInput
 
   private[parser] val docString: P[DocString] =
     (

@@ -113,11 +113,11 @@ class StepParserSuite extends FunSuite {
 
     def assertDocString(maybeStepArgument: Option[StepArgument]): Unit = {
       maybeStepArgument match {
-          case Some(DocString(content, maybeMediaType)) => {
-              assertEquals(content, "Some kind of text is here")
-              assertEquals(maybeMediaType, Option.empty[String])
-          }
-          case _ => fail("unexpected content")
+        case Some(DocString(content, maybeMediaType)) => {
+          assertEquals(content, "Some kind of text is here")
+          assertEquals(maybeMediaType, Option.empty[String])
+        }
+        case _ => fail("unexpected content")
       }
     }
 
@@ -128,9 +128,10 @@ class StepParserSuite extends FunSuite {
 
     val result: Either[Parser.Error, Step] = StepParser.step.parseAll(text)
     result match {
-        case Right(step @ Step(StepKeyword.Given, text, maybeArgument)) => assertGivenWithArg(step)
-        case Right(_) => fail("Expected an argument")
-        case Left(error) => fail(ParserDiagnose.betterMessage(error))
+      case Right(step @ Step(StepKeyword.Given, text, maybeArgument)) =>
+        assertGivenWithArg(step)
+      case Right(_) => fail("Expected an argument")
+      case Left(error) => fail(ParserDiagnose.betterMessage(error))
     }
   }
 }

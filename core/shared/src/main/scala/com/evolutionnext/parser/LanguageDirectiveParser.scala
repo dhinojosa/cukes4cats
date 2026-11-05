@@ -1,5 +1,3 @@
 package com.evolutionnext.parser
 
-object LanguageDirectiveParser {
-
-}
+object LanguageDirectiveParser {}
