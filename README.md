@@ -6,13 +6,14 @@ Unlike traditional BDD frameworks that rely on reflection, dependency injection 
 
 ## Design Goals
 
-- Parse Gherkin into a strongly-typed AST
+- Parse Gherkin into a strongly typed AST
 - Compile scenarios into Cats programs
 - Use explicit scenario state instead of hidden mutable state
 - Avoid reflection and runtime introspection
 - Integrate naturally with MUnit, Weaver, and ScalaCheck
 - Enable multiple proof strategies (Unit, Integration, API, UI)
 - Produce rich, extensible reports
+- Strong adherence to the Gherkin reference: https://cucumber.io/docs/gherkin/reference/
 
 ## Architecture
 
