@@ -42,18 +42,13 @@ class DocStringParserSuite extends FunSuite {
     }
   }
 
-  test("the doc string only 3 quotation marks - no media type without a new line") {
+  test("the closing delimiter must be on a new line after the Doc String content") {
     val input =
       s"""$delimiter
          |Hello$delimiter
          |""".stripMargin
-    val parser = DocStringParser.docString
-    parser.parseAll(input) match {
-      case Right(docString) => assertEquals(docString.content, "Hello")
-      case Left(parserError) => {
-        fail(ParserDiagnose.betterMessage(parserError))
-      }
-    }
+
+    assert(DocStringParser.docString.parseAll(input).isLeft)
   }
 
   test(
@@ -103,6 +98,62 @@ class DocStringParserSuite extends FunSuite {
         |  second""".stripMargin
     val parser = DocStringParser.docString
     parser.parseAll(input) match {
+      case Right(docString) => assertEquals(docString.content, expected)
+      case Left(parserError) =>
+        fail(ParserDiagnose.betterMessage(parserError))
+    }
+  }
+
+  test("content before the opening delimiter margin is moved to column zero") {
+    val input =
+      s"""    $delimiter
+         |    at margin
+         |      after margin
+         |  before margin
+         |unindented
+         |    $delimiter""".stripMargin
+    val expected =
+      """at margin
+        |  after margin
+        |before margin
+        |unindented""".stripMargin
+
+    DocStringParser.docString.parseAll(input) match {
+      case Right(docString) => assertEquals(docString.content, expected)
+      case Left(parserError) =>
+        fail(ParserDiagnose.betterMessage(parserError))
+    }
+  }
+
+  test("blank content lines are preserved when the Doc String is indented") {
+    val input =
+      s"""    $delimiter
+         |    first
+         |
+         |    third
+         |    $delimiter""".stripMargin
+    val expected =
+      """first
+        |
+        |third""".stripMargin
+
+    DocStringParser.docString.parseAll(input) match {
+      case Right(docString) => assertEquals(docString.content, expected)
+      case Left(parserError) =>
+        fail(ParserDiagnose.betterMessage(parserError))
+    }
+  }
+
+  test("tabs in the Doc String content are preserved after dedenting") {
+    val input = List(
+      s"    $delimiter",
+      "    first\tsecond",
+      "    \tindented with a tab",
+      s"    $delimiter"
+    ).mkString("\n")
+    val expected = "first\tsecond\n\tindented with a tab"
+
+    DocStringParser.docString.parseAll(input) match {
       case Right(docString) => assertEquals(docString.content, expected)
       case Left(parserError) =>
         fail(ParserDiagnose.betterMessage(parserError))

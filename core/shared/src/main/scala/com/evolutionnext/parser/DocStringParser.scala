@@ -23,26 +23,17 @@ package com.evolutionnext.parser
 import cats.parse.Parser as P
 import cats.parse.Rfc5234.*
 import com.evolutionnext.gherkin.StepArgument.DocString
-import com.evolutionnext.parser.CatsParseSupport.{endOfLineOrInput, spaces0, text}
+import com.evolutionnext.parser.CatsParseSupport.{endOfLineOrInput, text}
 
 object DocStringParser {
   private val docStringNoMediaTypeStartAnchor: P[Option[String]] =
-    (spaces0.void.with1 *> P.string("\"\"\"").void *> wsp.rep0.void *> (cr | lf).rep.void).map(
-      _ => None)
+    (P.string("\"\"\"").void *> wsp.rep0.void *> (cr | lf).rep.void).map(_ => None)
 
   private val docStringMediaTypeStartAnchor: P[Option[String]] =
-    (spaces0.void.with1 *> P.string("\"\"\"").void *> text <* wsp.rep0.void *> (cr | lf)
-      .rep
-      .void).map(s => Some(s))
+    (P.string("\"\"\"").void *> text <* wsp.rep0.void *> (cr | lf).rep.void).map(s => Some(s))
 
   private val docStringEndAnchor: P[Unit] =
-    (wsp.rep0.void.with1 *> P.string("\"\"\"") <* wsp.rep0.void) <* endOfLineOrInput
-
-  private[parser] val docStringOld: P[DocString] =
-    (docStringMediaTypeStartAnchor
-      .backtrack
-      .orElse(docStringNoMediaTypeStartAnchor) ~ P.anyChar.rep.string <* docStringEndAnchor)
-      .map { case (maybeMediaType, text) => DocString(text, maybeMediaType) }
+    (wsp.rep0.void.with1 *> P.string("\"\"\"").withContext("end delimiter") <* wsp.rep0.void) <* endOfLineOrInput
 
   private[parser] val docString: P[DocString] =
     (
@@ -57,7 +48,18 @@ object DocStringParser {
     }
 
   private def prepareString(count: Int, content: String): String = {
-    val lineSeparator = System.lineSeparator()
-    content.split("[\n\r]").map(_.substring(count)).mkString(lineSeparator)
+    content
+      .split("[\n\r]")
+      .flatMap(line => normalizeLine(count, line))
+      .mkString(System.lineSeparator())
+  }
+
+  private def normalizeLine(count: Int, content: String): Option[String] = {
+    println(s"count: $count\tcontent:$content")
+    if (content.contains("\r") || content.contains("\n")) Option.empty[String]
+    else {
+      val findFirstCharacter = content.indexWhere(_.isLetterOrDigit)
+      Option(content.drop(math.min(count, findFirstCharacter)))
+    }
   }
 }
