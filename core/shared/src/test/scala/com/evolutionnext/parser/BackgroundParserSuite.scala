@@ -22,6 +22,8 @@
 package com.evolutionnext.parser
 
 import cats.data.NonEmptyList
+import cats.parse.Parser
+import cats.parse.Parser.Expectation.WithContext
 import com.evolutionnext.gherkin.*
 import munit.FunSuite
 
@@ -61,5 +63,25 @@ class BackgroundParserSuite extends FunSuite {
       )
 
     assertEquals(BackgroundParser.background.parseAll(input), Right(expected))
+  }
+
+  test("parse a background with no visible steps") {
+    def assertLeftHasContext(pe: Parser.Error): Unit = {
+      val expectedError: Parser.Expectation = pe.expected.head
+      expectedError match {
+        case WithContext(contextStr, _) => assertEquals(clue(contextStr), "background-steps")
+        case _ => fail("expected a with context")
+      }
+    }
+    val input =
+      """|   Background:
+         |""".stripMargin
+
+    val result: Either[Parser.Error, Background] = BackgroundParser.background.parseAll(input)
+    assert(clue(result).isLeft)
+    result match {
+      case Left(error) => assertLeftHasContext(error)
+      case Right(_) => fail("Expected Left but got Right")
+    }
   }
 }

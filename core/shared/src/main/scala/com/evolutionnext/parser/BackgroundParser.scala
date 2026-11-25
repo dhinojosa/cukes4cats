@@ -30,5 +30,6 @@ object BackgroundParser {
     wsp.rep0.void.with1 *> P.string("Background:").void *> wsp.rep0.void *> (cr | lf).void
 
   private[parser] val background: P[Background] =
-    (backgroundHeader.void *> step.rep).map(steps => Background(steps))
+    (backgroundHeader.void *> step.rep.withContext("background-steps")).map(steps =>
+      Background(steps))
 }
