@@ -42,7 +42,7 @@ class DocStringParserSuite extends FunSuite {
     }
   }
 
-  test("the closing delimiter must be on a new line after the Doc String content") {
+  test("the closing delimiter must begin on a separate line after the Doc String content") {
     val input =
       s"""$delimiter
          |Hello$delimiter
@@ -126,6 +126,25 @@ class DocStringParserSuite extends FunSuite {
   }
 
   test("blank content lines are preserved when the Doc String is indented") {
+    val input =
+      s"""    $delimiter
+         |    first
+         |
+         |    third
+         |    $delimiter""".stripMargin
+    val expected =
+      """first
+        |
+        |third""".stripMargin
+
+    DocStringParser.docString.parseAll(input) match {
+      case Right(docString) => assertEquals(docString.content, expected)
+      case Left(parserError) =>
+        fail(ParserDiagnose.betterMessage(parserError))
+    }
+  }
+
+  test("blank content lines are preserved when the Doc String is indented different test") {
     val input =
       s"""    $delimiter
          |    first

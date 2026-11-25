@@ -20,33 +20,37 @@
  */
 
 package com.evolutionnext.parser
-import cats.parse.Parser as P
 import cats.parse.Rfc5234.*
+import cats.parse.{Parser0, Parser as P}
 import com.evolutionnext.gherkin.StepArgument.DocString
 import com.evolutionnext.parser.CatsParseSupport.{endOfLineOrInput, text}
 
 object DocStringParser {
-  private val docStringNoMediaTypeStartAnchor: P[Option[String]] =
-    (P.string("\"\"\"").void *> wsp.rep0.void *> (cr | lf).rep.void).map(_ => None)
 
-  private val docStringMediaTypeStartAnchor: P[Option[String]] =
-    (P.string("\"\"\"").void *> text <* wsp.rep0.void *> (cr | lf).rep.void).map(s => Some(s))
+  val endOfLine: P[Unit] = cr.backtrack.orElse(lf).backtrack.orElse(crlf)
 
-  private val docStringEndAnchor: P[Unit] =
-    (wsp.rep0.void.with1 *> P.string("\"\"\"").withContext("end delimiter") <* wsp
+  private val docStringEndAnchor: P[Unit] = {
+    ((endOfLine ~ wsp.rep0).void *> P.string("\"\"\"").withContext("end delimiter") <* wsp
       .rep0
       .void) <* endOfLineOrInput
+  }
 
-  private[parser] val docString: P[DocString] =
-    (
-      wsp.rep0.map(_.length).with1 ~ docStringMediaTypeStartAnchor
-        .backtrack
-        .orElse(docStringNoMediaTypeStartAnchor) ~
-        P.until0(docStringEndAnchor) <*
-        docStringEndAnchor
-    ).map {
-      case ((spaceCount, maybeMediaType), content) =>
-        DocString(prepareString(spaceCount, content), maybeMediaType)
+  private val openingIndentation: Parser0[Int] = wsp.rep0.map(_.length)
+
+  private val openingDelimiter: P[Unit] = P.string("\"\"\"").void
+
+  private val optionalMediaType: Parser0[Option[String]] = text.?
+
+  val openingLine: P[(Int, Option[String])] =
+    openingIndentation.with1 ~ (openingDelimiter *> optionalMediaType <* endOfLine)
+
+  val docString: P[DocString] =
+    (openingLine ~ P.until0(docStringEndAnchor) <* docStringEndAnchor).map {
+      case ((margin, mediaType), rawContent) =>
+        DocString(
+          prepareString(margin, rawContent),
+          mediaType
+        )
     }
 
   private def prepareString(count: Int, content: String): String = {
@@ -57,10 +61,9 @@ object DocStringParser {
   }
 
   private def normalizeLine(count: Int, content: String): Option[String] = {
-    println(s"count: $count\tcontent:$content")
     if (content.contains("\r") || content.contains("\n")) Option.empty[String]
     else {
-      val findFirstCharacter = content.indexWhere(_.isLetterOrDigit)
+      val findFirstCharacter = content.segmentLength(Character.isWhitespace)
       Option(content.drop(math.min(count, findFirstCharacter)))
     }
   }

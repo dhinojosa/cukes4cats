@@ -346,7 +346,7 @@ class FeatureParserSuite extends CatsEffectSuite {
                                |  "email": "ada@example.com",
                                |  "active": true
                                |}""".stripMargin
-          assertEquals(expectedText, content)
+          assertEquals(content, expectedText)
         }
         case _ => fail("Expected a head with Given and a Doc String")
       }
