@@ -22,8 +22,20 @@
 
 package com.evolutionnext.parser
 
+import cats.parse.Parser
+import cats.parse.Parser.Expectation.WithContext
+
 sealed trait BackgroundError extends Product with Serializable
 
 object BackgroundError {
   case object MissingSteps extends BackgroundError
+  case object Undefined extends BackgroundError
+
+  def apply(parserError: Parser.Error): BackgroundError = {
+    val head: Parser.Expectation = parserError.expected.head
+    head match {
+      case WithContext("background-steps", _) => BackgroundError.MissingSteps
+      case _ => BackgroundError.Undefined
+    }
+  }
 }
