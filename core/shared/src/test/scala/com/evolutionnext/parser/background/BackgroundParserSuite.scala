@@ -25,7 +25,7 @@ import cats.data.NonEmptyList
 import cats.parse.Parser
 import cats.parse.Parser.Expectation.WithContext
 import com.evolutionnext.gherkin.*
-import munit.{FunSuite, ScalaCheckSuite}
+import munit.ScalaCheckSuite
 import org.scalacheck.Gen
 import org.scalacheck.Prop.*
 

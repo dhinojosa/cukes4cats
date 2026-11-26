@@ -23,9 +23,9 @@ package com.evolutionnext.parser.examples
 
 import com.evolutionnext.gherkin.{Cell, Example, Row, Table}
 import com.evolutionnext.parser.ParserDiagnose
-import munit.FunSuite
+import munit.ScalaCheckSuite
 
-class ExamplesParserSuite extends FunSuite {
+class ExamplesParserSuite extends ScalaCheckSuite {
   test("test an example with the table flushed to the left") {
     val text = """Examples: Domestic
                  || weight | region   | cost |

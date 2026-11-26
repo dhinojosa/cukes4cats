@@ -25,9 +25,9 @@ import com.evolutionnext.gherkin.FeatureElement.Scenario
 import com.evolutionnext.gherkin.Step
 import com.evolutionnext.gherkin.StepKeyword.*
 import com.evolutionnext.parser.ParserDiagnose
-import munit.FunSuite
+import munit.ScalaCheckSuite
 
-class ScenarioParserSuite extends FunSuite {
+class ScenarioParserSuite extends ScalaCheckSuite {
   test("test a scenario with a tag line") {
     val text: String =
       """@one @two

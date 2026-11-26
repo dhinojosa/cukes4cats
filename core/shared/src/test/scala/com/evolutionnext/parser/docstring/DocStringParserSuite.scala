@@ -22,9 +22,9 @@
 package com.evolutionnext.parser.docstring
 
 import com.evolutionnext.parser.ParserDiagnose
-import munit.FunSuite
+import munit.ScalaCheckSuite
 
-class DocStringParserSuite extends FunSuite {
+class DocStringParserSuite extends ScalaCheckSuite {
 
   val delimiter = "\"\"\""
 

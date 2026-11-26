@@ -22,9 +22,9 @@
 package com.evolutionnext.parser.scenariooutline
 
 import com.evolutionnext.parser.ParserDiagnose
-import munit.FunSuite
+import munit.ScalaCheckSuite
 
-class ScenarioOutlineParserSuite extends FunSuite {
+class ScenarioOutlineParserSuite extends ScalaCheckSuite {
   test("test a scenario outline") {
     val text: String =
       """Scenario Outline: Apply discount to total

@@ -23,9 +23,9 @@ package com.evolutionnext.parser.tag
 
 import com.evolutionnext.gherkin.Tag
 import com.evolutionnext.parser.ParserDiagnose
-import munit.FunSuite
+import munit.ScalaCheckSuite
 
-class TagParserSuite extends FunSuite {
+class TagParserSuite extends ScalaCheckSuite {
   test("parse a single tag") {
     val text = "@food"
     val result = TagParser.tag.parseAll(text)

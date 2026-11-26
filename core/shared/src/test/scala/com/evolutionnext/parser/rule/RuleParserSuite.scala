@@ -23,9 +23,9 @@ package com.evolutionnext.parser.rule
 
 import com.evolutionnext.gherkin.Rule
 import com.evolutionnext.parser.ParserDiagnose
-import munit.FunSuite
+import munit.ScalaCheckSuite
 
-class RuleParserSuite extends FunSuite {
+class RuleParserSuite extends ScalaCheckSuite {
   test("A rule with one scenario") {
     val text =
       """Rule: Make tortillas

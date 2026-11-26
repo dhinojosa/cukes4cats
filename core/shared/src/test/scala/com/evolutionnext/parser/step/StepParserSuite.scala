@@ -26,9 +26,9 @@ import com.evolutionnext.gherkin.*
 import com.evolutionnext.gherkin.StepArgument.DocString
 import com.evolutionnext.gherkin.StepKeyword.Given
 import com.evolutionnext.parser.ParserDiagnose
-import munit.FunSuite
+import munit.ScalaCheckSuite
 
-class StepParserSuite extends FunSuite {
+class StepParserSuite extends ScalaCheckSuite {
   test("Step Parser for Given") {
     val result: Either[Parser.Error, Step] =
       StepParser.step.parseAll("Given a clown makes bread")

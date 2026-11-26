@@ -23,9 +23,9 @@ package com.evolutionnext.parser.table
 
 import com.evolutionnext.gherkin.{Cell, Row, Table}
 import com.evolutionnext.parser.ParserDiagnose.betterMessage
-import munit.FunSuite
+import munit.ScalaCheckSuite
 
-class TableParserSuite extends FunSuite {
+class TableParserSuite extends ScalaCheckSuite {
   test("A simple data table") {
     val text: String = """|| username | email              | role   |
                           || alice    | alice@example.com  | admin  |
