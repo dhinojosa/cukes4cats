@@ -38,17 +38,18 @@ object DocStringParser {
     P.charsWhile0(nonNewline).with1 <* endOfLine
 
   private val closingLine: P[Unit] =
-        (wsp.rep0.with1 *> P.string(delimiter) <* wsp.rep0 <* endOfLineOrInput).void
+    (wsp.rep0.with1 *> P.string(delimiter) <* wsp.rep0 <* endOfLineOrInput).void
 
   private val contentLines: Parser0[List[String]] =
-    contentLine.repUntil0(closingLine) <* closingLine
+    (contentLine.repUntil0(closingLine) <* closingLine)
+      .withContext(DocStringError.ClosingDelimiterContext)
 
   private val openingIndentation: Parser0[Int] = wsp.rep0.map(_.length)
 
-  private val openingDelimiter: P[Unit] = P.string(delimiter).void
+  private val openingDelimiter: P[Unit] =
+    P.string(delimiter).void.withContext(DocStringError.OpeningDelimiterContext)
 
   private val optionalMediaType: Parser0[Option[String]] = text.?
-
 
   val openingLine: P[(Int, Option[String])] =
     openingIndentation.with1 ~ (openingDelimiter *> optionalMediaType <* endOfLine)

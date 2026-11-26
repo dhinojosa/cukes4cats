@@ -31,6 +31,15 @@ class DocStringParserSuite extends ScalaCheckSuite {
 
   val delimiter = "\"\"\""
 
+  private def assertDocStringError(input: String, expected: DocStringError): Unit =
+    DocStringParser.docString.parseAll(input) match {
+      case Left(DocStringError(actual)) => assertEquals(actual, expected)
+      case Left(parserError) =>
+        fail(s"Expected $expected, but the error was not owned by DocStringError: $parserError")
+      case Right(docString) =>
+        fail(s"Expected $expected, but successfully parsed $docString")
+    }
+
   test("the doc string only 3 quotation marks - no media type with a new line") {
     val input =
       s"""$delimiter
@@ -52,7 +61,7 @@ class DocStringParserSuite extends ScalaCheckSuite {
          |Hello$delimiter
          |""".stripMargin
 
-    assert(DocStringParser.docString.parseAll(input).isLeft)
+    assertDocStringError(input, DocStringError.Unterminated)
   }
 
   test(
@@ -188,7 +197,7 @@ class DocStringParserSuite extends ScalaCheckSuite {
          |content
          |$delimiter""".stripMargin
 
-    assert(DocStringParser.docString.parseAll(input).isLeft)
+    assertDocStringError(input, DocStringError.ExpectedOpeningDelimiter)
   }
 
   test("missing closing delimiter") {
@@ -196,7 +205,7 @@ class DocStringParserSuite extends ScalaCheckSuite {
       s"""$delimiter
          |content""".stripMargin
 
-    assert(DocStringParser.docString.parseAll(input).isLeft)
+    assertDocStringError(input, DocStringError.Unterminated)
   }
 
   test("empty doc string") {
@@ -242,7 +251,7 @@ class DocStringParserSuite extends ScalaCheckSuite {
          |content
          |$delimiter garbage""".stripMargin
 
-    assert(DocStringParser.docString.parseAll(input).isLeft)
+    assertDocStringError(input, DocStringError.Unterminated)
   }
 
   property("each content line is dedented by at most the opening margin") {
