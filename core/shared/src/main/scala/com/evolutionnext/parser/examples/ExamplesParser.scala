@@ -30,7 +30,7 @@ object ExamplesParser {
   private val exampleLine: P[Option[String]] =
     (wsp.rep0.void.with1 *> P.string("Examples:").void *>
       wsp.rep0.void *> endOfLine)
-      .map(u => Option.empty[String])
+      .map(_ => Option.empty[String])
       .withContext("Example Line Without Label")
 
   private val exampleLineWithLabel: P[Option[String]] =
