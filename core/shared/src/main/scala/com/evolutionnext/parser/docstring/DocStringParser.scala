@@ -65,7 +65,7 @@ object DocStringParser {
 
   private def normalizeLine(count: Int, content: String): String = {
     val leadingWhitespace =
-      content.segmentLength(ch => ch == ' ' || ch == '\t')
+      content.segmentLength(ch => ch == ' ' || ch == '\t', 0)
 
     content.drop(math.min(count, leadingWhitespace))
   }

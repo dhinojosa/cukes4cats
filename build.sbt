@@ -8,9 +8,23 @@ ThisBuild / developers ++= List(
   tlGitHubDev("dhinojosa", "Daniel Hinojosa")
 )
 
+val Scala212 = "2.12.21"
+val Scala213 = "2.13.18"
 val Scala3 = "3.3.0"
-ThisBuild / crossScalaVersions := Seq("2.13.18", Scala3)
+val Java17 = JavaSpec.temurin("17")
+val Java21 = JavaSpec.temurin("21")
+val Java25 = JavaSpec.temurin("25")
+
+ThisBuild / crossScalaVersions := Seq(Scala212, Scala213, Scala3)
 ThisBuild / scalaVersion := Scala3 // the default Scala
+ThisBuild / tlJdkRelease := Some(17)
+ThisBuild / githubWorkflowJavaVersions :=
+  Seq(Java17, Java21, Java25)
+ThisBuild / githubWorkflowBuildMatrixExclusions := Seq(
+  MatrixExclude(Map("project" -> "rootJS", "java" -> Java21.render)),
+  MatrixExclude(Map("project" -> "rootJS", "java" -> Java25.render))
+)
+
 ThisBuild / githubWorkflowGeneratedCI ~= (_.map {
   case job if job.id == "dependency-submission" =>
     job.withPermissions(
