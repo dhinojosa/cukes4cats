@@ -18,6 +18,8 @@ val Java25 = JavaSpec.temurin("25")
 ThisBuild / crossScalaVersions := Seq(Scala212, Scala213, Scala3)
 ThisBuild / scalaVersion := Scala3 // the default Scala
 ThisBuild / tlJdkRelease := Some(17)
+ThisBuild / semanticdbEnabled := true
+ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 ThisBuild / githubWorkflowJavaVersions :=
   Seq(Java17, Java21, Java25)
 ThisBuild / githubWorkflowBuildMatrixExclusions := Seq(
