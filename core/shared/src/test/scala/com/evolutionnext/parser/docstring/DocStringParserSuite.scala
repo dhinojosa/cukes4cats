@@ -23,6 +23,8 @@ package com.evolutionnext.parser.docstring
 
 import com.evolutionnext.parser.ParserDiagnose
 import munit.ScalaCheckSuite
+import org.scalacheck.Gen
+import org.scalacheck.Prop.forAll
 
 class DocStringParserSuite extends ScalaCheckSuite {
 
@@ -207,11 +209,82 @@ class DocStringParserSuite extends ScalaCheckSuite {
     assert(DocStringParser.docString.parseAll(input).isLeft)
   }
 
-  /*
-   Some Notes:
-    - Capture the whitespace string, not merely its length, because wsp also includes tabs. You can decide deliberately how mixed tabs/spaces contribute to indentation.
-    - The closing delimiter does not determine the margin.
-    - Detect the opening delimiter only after leading whitespace at the beginning of its line—not merely the first """ found anywhere.
-    - If FeatureParser.parse still calls .trim on every input line, that must eventually change because it removes the indentation before DocStringParser can measure it.
-   */
+  property("each content line is dedented by at most the opening margin") {
+    val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
+
+    forAll(Gen.choose(0, 8), Gen.choose(0, 12), text) { (margin, indentation, content) =>
+      val line = (" " * indentation) + content
+      val input = List(
+        (" " * margin) + delimiter,
+        line,
+        (" " * margin) + delimiter
+      ).mkString("\n")
+
+      val expected =
+        line.drop(math.min(margin, indentation))
+
+      assertEquals(
+        DocStringParser.docString.parseAll(input).map(_.content),
+        Right(expected)
+      )
+    }
+
+    property("shifting the entire Doc String right does not change its content") {
+      val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
+
+      forAll(Gen.choose(0, 8), text) { (shift, content) =>
+        def render(margin: Int): String =
+          List(
+            (" " * margin) + delimiter,
+            (" " * margin) + content,
+            (" " * margin) + delimiter
+          ).mkString("\n")
+
+        val original = DocStringParser.docString.parseAll(render(0))
+        val shifted = DocStringParser.docString.parseAll(render(shift))
+
+        assertEquals(shifted, original)
+      }
+    }
+
+    property("closing delimiter indentation does not affect content") {
+      val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
+
+      forAll(Gen.choose(0, 8), Gen.choose(0, 8), text) {
+        (openingMargin, closingMargin, content) =>
+          val input = List(
+            (" " * openingMargin) + delimiter,
+            (" " * openingMargin) + content,
+            (" " * closingMargin) + delimiter
+          ).mkString("\n")
+
+          assertEquals(
+            DocStringParser.docString.parseAll(input).map(_.content),
+            Right(content)
+          )
+      }
+    }
+  }
+
+  property("LF and CRLF Doc Strings produce the same content") {
+      val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
+
+      forAll(text, text) { (first, second) =>
+          def input(eol: String): String =
+              List(delimiter, first, second, delimiter).mkString(eol)
+
+          assertEquals(
+              DocStringParser.docString.parseAll(input("\r\n")),
+              DocStringParser.docString.parseAll(input("\n"))
+          )
+      }
+  }
+
+        /*
+         Some Notes:
+          - Capture the whitespace string, not merely its length, because wsp also includes tabs. You can decide deliberately how mixed tabs/spaces contribute to indentation.
+          - The closing delimiter does not determine the margin.
+          - Detect the opening delimiter only after leading whitespace at the beginning of its line—not merely the first """ found anywhere.
+          - If FeatureParser.parse still calls .trim on every input line, that must eventually change because it removes the indentation before DocStringParser can measure it.
+         */
 }

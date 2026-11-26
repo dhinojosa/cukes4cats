@@ -27,7 +27,7 @@ import com.evolutionnext.parser.CatsParseSupport.{endOfLineOrInput, text}
 
 object DocStringParser {
 
-  val endOfLine: P[Unit] = cr.backtrack.orElse(lf).backtrack.orElse(crlf)
+  val endOfLine: P[Unit] = crlf.backtrack.orElse(cr).orElse(lf)
 
   private val docStringEndAnchor: P[Unit] = {
     ((endOfLine ~ wsp.rep0).void *> P.string("\"\"\"").withContext("end delimiter") <* wsp
@@ -55,7 +55,7 @@ object DocStringParser {
 
   private def prepareString(count: Int, content: String): String = {
     content
-      .split("[\n\r]")
+      .split("\r\n|[\r\n]", -1)
       .flatMap(line => normalizeLine(count, line))
       .mkString(System.lineSeparator())
   }
