@@ -18,6 +18,7 @@ val Java25 = JavaSpec.temurin("25")
 ThisBuild / crossScalaVersions := Seq(Scala212, Scala213, Scala3)
 ThisBuild / scalaVersion := Scala3 // the default Scala
 ThisBuild / tlJdkRelease := Some(17)
+ThisBuild / tlFatalWarnings := true
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 ThisBuild / githubWorkflowJavaVersions :=
@@ -60,3 +61,13 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       "org.scalameta" %% "munit-scalacheck" % "1.3.0" % Test
     )
   )
+
+addCommandAlias(
+  "verify",
+  ";clean;+test;++ 2.13;scalafixAll --check;headerCheckAll;scalafmtCheckAll;scalafmtSbtCheck"
+)
+
+addCommandAlias(
+  "format",
+  ";clean;++ 2.13;scalafixAll;scalafmtAll;scalafmtSbt"
+)
