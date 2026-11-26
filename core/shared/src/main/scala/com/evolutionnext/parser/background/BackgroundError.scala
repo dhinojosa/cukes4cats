@@ -31,11 +31,11 @@ object BackgroundError {
   case object MissingSteps extends BackgroundError
   case object Undefined extends BackgroundError
 
-  def apply(parserError: Parser.Error): BackgroundError = {
+  def unapply(parserError: Parser.Error): Option[BackgroundError] = {
     val head: Parser.Expectation = parserError.expected.head
     head match {
-      case WithContext("background-steps", _) => BackgroundError.MissingSteps
-      case _ => BackgroundError.Undefined
+      case WithContext("background-steps", _) => Option(BackgroundError.MissingSteps)
+      case _ => Option.empty[BackgroundError]
     }
   }
 }

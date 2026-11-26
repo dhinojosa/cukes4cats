@@ -25,9 +25,11 @@ import cats.data.NonEmptyList
 import cats.parse.Parser
 import cats.parse.Parser.Expectation.WithContext
 import com.evolutionnext.gherkin.*
-import munit.FunSuite
+import munit.{FunSuite, ScalaCheckSuite}
+import org.scalacheck.Gen
+import org.scalacheck.Prop.*
 
-class BackgroundParserSuite extends FunSuite {
+class BackgroundParserSuite extends ScalaCheckSuite {
 
   test("parse a background with multiple steps") {
     val input =
@@ -82,6 +84,16 @@ class BackgroundParserSuite extends FunSuite {
     result match {
       case Left(error) => assertLeftHasContext(error)
       case Right(_) => fail("Expected Left but got Right")
+    }
+  }
+
+  property("a Background without Steps never parses") {
+    forAll(Gen.choose(0, 8)) { indentation =>
+      val input = s"${" " * indentation}Background:\n"
+
+      assert(
+        BackgroundParser.background.parseAll(input).isLeft
+      )
     }
   }
 }
