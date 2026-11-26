@@ -279,12 +279,4 @@ class DocStringParserSuite extends ScalaCheckSuite {
           )
       }
   }
-
-        /*
-         Some Notes:
-          - Capture the whitespace string, not merely its length, because wsp also includes tabs. You can decide deliberately how mixed tabs/spaces contribute to indentation.
-          - The closing delimiter does not determine the margin.
-          - Detect the opening delimiter only after leading whitespace at the beginning of its line—not merely the first """ found anywhere.
-          - If FeatureParser.parse still calls .trim on every input line, that must eventually change because it removes the indentation before DocStringParser can measure it.
-         */
 }
