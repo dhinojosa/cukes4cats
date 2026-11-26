@@ -26,8 +26,6 @@ import cats.parse.Parser
 import cats.parse.Parser.Expectation.{OneOfStr, WithContext}
 import munit.ScalaCheckSuite
 
-import scala.language.postfixOps
-
 class BackgroundErrorSuite extends ScalaCheckSuite {
   test("convert a background-steps Parser.Error to an appropriate BackgroundError") {
     val parserError: Parser.Error =

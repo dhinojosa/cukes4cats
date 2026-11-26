@@ -24,7 +24,6 @@ package com.evolutionnext.parser.step
 import cats.parse.Parser
 import com.evolutionnext.gherkin.*
 import com.evolutionnext.gherkin.StepArgument.DocString
-import com.evolutionnext.gherkin.StepKeyword.Given
 import com.evolutionnext.parser.ParserDiagnose
 import munit.ScalaCheckSuite
 
@@ -36,7 +35,7 @@ class StepParserSuite extends ScalaCheckSuite {
       assertEquals(step.text, "a clown makes bread")
     }
     result match {
-      case Right(step @ Step(StepKeyword.Given, text, maybeArgument)) =>
+      case Right(step @ Step(StepKeyword.Given, _, _)) =>
         assertGiven(step)
       case Right(_) => fail("Expected a Given")
       case Left(error) => fail(ParserDiagnose.betterMessage(error))
@@ -51,7 +50,7 @@ class StepParserSuite extends ScalaCheckSuite {
     }
 
     result match {
-      case Right(step @ Step(StepKeyword.When, text, maybeArgument)) =>
+      case Right(step @ Step(StepKeyword.When, _, _)) =>
         assertGiven(step)
       case Right(_) => fail("Expected a When")
       case Left(error) => fail(ParserDiagnose.betterMessage(error))
@@ -66,7 +65,7 @@ class StepParserSuite extends ScalaCheckSuite {
     }
 
     result match {
-      case Right(step @ Step(StepKeyword.Then, text, maybeArgument)) =>
+      case Right(step @ Step(StepKeyword.Then, _, _)) =>
         assertGiven(step)
       case Right(_) => fail("Expected a Then")
       case Left(error) => fail(ParserDiagnose.betterMessage(error))
@@ -81,7 +80,7 @@ class StepParserSuite extends ScalaCheckSuite {
     }
 
     result match {
-      case Right(step @ Step(StepKeyword.And, text, maybeArgument)) =>
+      case Right(step @ Step(StepKeyword.And, _, _)) =>
         assertGiven(step)
       case Right(_) => fail("Expected a And")
       case Left(error) => fail(ParserDiagnose.betterMessage(error))
@@ -96,7 +95,7 @@ class StepParserSuite extends ScalaCheckSuite {
     }
 
     result match {
-      case Right(step @ Step(StepKeyword.But, text, maybeArgument)) =>
+      case Right(step @ Step(StepKeyword.But, _, _)) =>
         assertGiven(step)
       case Right(_) => fail("Expected a But")
       case Left(error) => fail(ParserDiagnose.betterMessage(error))
@@ -129,7 +128,7 @@ class StepParserSuite extends ScalaCheckSuite {
 
     val result: Either[Parser.Error, Step] = StepParser.step.parseAll(text)
     result match {
-      case Right(step @ Step(StepKeyword.Given, text, maybeArgument)) =>
+      case Right(step @ Step(StepKeyword.Given, _, _)) =>
         assertGivenWithArg(step)
       case Right(_) => fail("Expected an argument")
       case Left(error) => fail(ParserDiagnose.betterMessage(error))
