@@ -21,6 +21,7 @@
 
 package com.evolutionnext.parser.docstring
 
+import com.evolutionnext.gherkin.StepArgument.DocString
 import com.evolutionnext.parser.ParserDiagnose
 import munit.ScalaCheckSuite
 import org.scalacheck.Gen
@@ -147,25 +148,6 @@ class DocStringParserSuite extends ScalaCheckSuite {
     }
   }
 
-  test("blank content lines are preserved when the Doc String is indented different test") {
-    val input =
-      s"""    $delimiter
-         |    first
-         |
-         |    third
-         |    $delimiter""".stripMargin
-    val expected =
-      """first
-        |
-        |third""".stripMargin
-
-    DocStringParser.docString.parseAll(input) match {
-      case Right(docString) => assertEquals(docString.content, expected)
-      case Left(parserError) =>
-        fail(ParserDiagnose.betterMessage(parserError))
-    }
-  }
-
   test("tabs in the Doc String content are preserved after dedenting") {
     val input = List(
       s"    $delimiter",
@@ -182,7 +164,7 @@ class DocStringParserSuite extends ScalaCheckSuite {
     }
   }
 
-  test("mixed spaces and tabs are dedented only when they match the opening indentation") {
+  test("spaces and tabs each contribute one character to the dedentation margin") {
     val openingIndentation = " \t"
     val input =
       s"""$openingIndentation$delimiter
@@ -209,6 +191,60 @@ class DocStringParserSuite extends ScalaCheckSuite {
     assert(DocStringParser.docString.parseAll(input).isLeft)
   }
 
+  test("missing closing delimiter") {
+    val input =
+      s"""$delimiter
+         |content""".stripMargin
+
+    assert(DocStringParser.docString.parseAll(input).isLeft)
+  }
+
+  test("empty doc string") {
+    val input =
+      s"""$delimiter
+         |$delimiter""".stripMargin
+
+    assertEquals(DocStringParser.docString.parseAll(input), Right(DocString("", None)))
+  }
+
+  test("an inline quote is acceptable") {
+    val input =
+      s"""${delimiter}
+         |Hello $delimiter World
+         |$delimiter""".stripMargin
+
+    assertEquals(
+      DocStringParser.docString.parseAll(input),
+      Right(DocString("Hello \"\"\" World", None)))
+  }
+
+  test("media type should be captured") {
+    val input =
+      s"""${delimiter}application/json
+         |{"answer": 42}
+         |$delimiter""".stripMargin
+    assertEquals(
+      DocStringParser.docString.parseAll(input),
+      Right(DocString("{\"answer\": 42}", Option("application/json"))))
+  }
+
+  test("an empty Doc String has empty content") {
+    val input = List(delimiter, delimiter).mkString("\n")
+    assertEquals(
+      DocStringParser.docString.parseAll(input).map(_.content),
+      Right("")
+    )
+  }
+
+  test("closing delimiter has non-whitespace afterward") {
+    val input =
+      s"""$delimiter
+         |content
+         |$delimiter garbage""".stripMargin
+
+    assert(DocStringParser.docString.parseAll(input).isLeft)
+  }
+
   property("each content line is dedented by at most the opening margin") {
     val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
 
@@ -228,55 +264,55 @@ class DocStringParserSuite extends ScalaCheckSuite {
         Right(expected)
       )
     }
+  }
 
-    property("shifting the entire Doc String right does not change its content") {
-      val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
+  property("shifting the entire Doc String right does not change its content") {
+    val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
 
-      forAll(Gen.choose(0, 8), text) { (shift, content) =>
-        def render(margin: Int): String =
-          List(
-            (" " * margin) + delimiter,
-            (" " * margin) + content,
-            (" " * margin) + delimiter
-          ).mkString("\n")
+    forAll(Gen.choose(0, 8), text) { (shift, content) =>
+      def render(margin: Int): String =
+        List(
+          (" " * margin) + delimiter,
+          (" " * margin) + content,
+          (" " * margin) + delimiter
+        ).mkString("\n")
 
-        val original = DocStringParser.docString.parseAll(render(0))
-        val shifted = DocStringParser.docString.parseAll(render(shift))
+      val original = DocStringParser.docString.parseAll(render(0))
+      val shifted = DocStringParser.docString.parseAll(render(shift))
 
-        assertEquals(shifted, original)
-      }
+      assertEquals(shifted, original)
     }
+  }
 
-    property("closing delimiter indentation does not affect content") {
-      val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
+  property("closing delimiter indentation does not affect content") {
+    val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
 
-      forAll(Gen.choose(0, 8), Gen.choose(0, 8), text) {
-        (openingMargin, closingMargin, content) =>
-          val input = List(
-            (" " * openingMargin) + delimiter,
-            (" " * openingMargin) + content,
-            (" " * closingMargin) + delimiter
-          ).mkString("\n")
+    forAll(Gen.choose(0, 8), Gen.choose(0, 8), text) {
+      (openingMargin, closingMargin, content) =>
+        val input = List(
+          (" " * openingMargin) + delimiter,
+          (" " * openingMargin) + content,
+          (" " * closingMargin) + delimiter
+        ).mkString("\n")
 
-          assertEquals(
-            DocStringParser.docString.parseAll(input).map(_.content),
-            Right(content)
-          )
-      }
+        assertEquals(
+          DocStringParser.docString.parseAll(input).map(_.content),
+          Right(content)
+        )
     }
   }
 
   property("LF and CRLF Doc Strings produce the same content") {
-      val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
+    val text = Gen.nonEmptyListOf(Gen.alphaNumChar).map(_.mkString)
 
-      forAll(text, text) { (first, second) =>
-          def input(eol: String): String =
-              List(delimiter, first, second, delimiter).mkString(eol)
+    forAll(text, text) { (first, second) =>
+      def input(eol: String): String =
+        List(delimiter, first, second, delimiter).mkString(eol)
 
-          assertEquals(
-              DocStringParser.docString.parseAll(input("\r\n")),
-              DocStringParser.docString.parseAll(input("\n"))
-          )
-      }
+      assertEquals(
+        DocStringParser.docString.parseAll(input("\r\n")),
+        DocStringParser.docString.parseAll(input("\n"))
+      )
+    }
   }
 }

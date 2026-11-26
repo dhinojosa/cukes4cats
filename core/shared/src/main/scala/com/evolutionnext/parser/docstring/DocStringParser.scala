@@ -29,42 +29,43 @@ object DocStringParser {
 
   val endOfLine: P[Unit] = crlf.backtrack.orElse(cr).orElse(lf)
 
-  private val docStringEndAnchor: P[Unit] = {
-    ((endOfLine ~ wsp.rep0).void *> P.string("\"\"\"").withContext("end delimiter") <* wsp
-      .rep0
-      .void) <* endOfLineOrInput
-  }
+  private val delimiter = "\"\"\""
+
+  private val nonNewline: Char => Boolean =
+    ch => ch != '\r' && ch != '\n'
+
+  private val contentLine: P[String] =
+    P.charsWhile0(nonNewline).with1 <* endOfLine
+
+  private val closingLine: P[Unit] =
+        (wsp.rep0.with1 *> P.string(delimiter) <* wsp.rep0 <* endOfLineOrInput).void
+
+  private val contentLines: Parser0[List[String]] =
+    contentLine.repUntil0(closingLine) <* closingLine
 
   private val openingIndentation: Parser0[Int] = wsp.rep0.map(_.length)
 
-  private val openingDelimiter: P[Unit] = P.string("\"\"\"").void
+  private val openingDelimiter: P[Unit] = P.string(delimiter).void
 
   private val optionalMediaType: Parser0[Option[String]] = text.?
+
 
   val openingLine: P[(Int, Option[String])] =
     openingIndentation.with1 ~ (openingDelimiter *> optionalMediaType <* endOfLine)
 
   val docString: P[DocString] =
-    (openingLine ~ P.until0(docStringEndAnchor) <* docStringEndAnchor).map {
-      case ((margin, mediaType), rawContent) =>
+    (openingLine ~ contentLines).map {
+      case ((margin, mediaType), lines) =>
         DocString(
-          prepareString(margin, rawContent),
+          lines.map(line => normalizeLine(margin, line)).mkString("\n"),
           mediaType
         )
     }
 
-  private def prepareString(count: Int, content: String): String = {
-    content
-      .split("\r\n|[\r\n]", -1)
-      .flatMap(line => normalizeLine(count, line))
-      .mkString(System.lineSeparator())
-  }
+  private def normalizeLine(count: Int, content: String): String = {
+    val leadingWhitespace =
+      content.segmentLength(ch => ch == ' ' || ch == '\t')
 
-  private def normalizeLine(count: Int, content: String): Option[String] = {
-    if (content.contains("\r") || content.contains("\n")) Option.empty[String]
-    else {
-      val findFirstCharacter = content.segmentLength(Character.isWhitespace)
-      Option(content.drop(math.min(count, findFirstCharacter)))
-    }
+    content.drop(math.min(count, leadingWhitespace))
   }
 }
