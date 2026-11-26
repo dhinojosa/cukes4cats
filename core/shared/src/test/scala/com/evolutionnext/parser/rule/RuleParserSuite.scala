@@ -37,7 +37,7 @@ class RuleParserSuite extends ScalaCheckSuite {
         |     Then it is ready to be made""".stripMargin
     val result = RuleParser.rule.parseAll(text)
     result match {
-      case Right(Rule(text, featureElements)) => assertEquals(text, "Make tortillas")
+      case Right(Rule(text, _)) => assertEquals(text, "Make tortillas")
       case Left(error) => fail(ParserDiagnose.betterMessage(error))
     }
   }
@@ -54,7 +54,7 @@ class RuleParserSuite extends ScalaCheckSuite {
         |""".stripMargin
     val result = RuleParser.rule.parseAll(text)
     result match {
-      case Right(Rule(text, featureElements)) => assertEquals(text, "Make tortillas")
+      case Right(Rule(text, _)) => assertEquals(text, "Make tortillas")
       case Left(error) => fail(ParserDiagnose.betterMessage(error))
     }
   }
@@ -72,7 +72,7 @@ class RuleParserSuite extends ScalaCheckSuite {
         |""".stripMargin
     val result = RuleParser.rule.parse(text)
     result match {
-      case Right((remainder, Rule(text, featureElements))) => {
+      case Right((remainder, Rule(text, _))) => {
         assertEquals(text, "Make tortillas")
         assertEquals(
           remainder,

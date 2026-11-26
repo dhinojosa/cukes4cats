@@ -340,8 +340,7 @@ class FeatureParserSuite extends CatsEffectSuite {
   test("parse 006-doc-strings.feature") {
     def assertExpectedGivenStepWithDocString(steps: List[Step]): Unit = {
       steps.headOption match {
-        case Some(
-              Step(StepKeyword.Given, text, Some(StepArgument.DocString(content, None)))) => {
+        case Some(Step(StepKeyword.Given, _, Some(StepArgument.DocString(content, None)))) => {
           val expectedText = """{
                                |  "name": "Ada",
                                |  "email": "ada@example.com",
@@ -355,7 +354,7 @@ class FeatureParserSuite extends CatsEffectSuite {
 
     def assertExpectedScenario(featureElement: FeatureElement): Unit = {
       featureElement match {
-        case Scenario(tags, name, steps) => assertExpectedGivenStepWithDocString(steps)
+        case Scenario(_, _, steps) => assertExpectedGivenStepWithDocString(steps)
         case _ => fail("Expected a scenario")
       }
     }
